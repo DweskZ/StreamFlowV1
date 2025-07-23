@@ -61,7 +61,25 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				'spotify': {
+					'green': 'hsl(var(--spotify-green))',
+					'black': 'hsl(var(--spotify-black))',
+					'dark-gray': 'hsl(var(--spotify-dark-gray))',
+					'medium-gray': 'hsl(var(--spotify-medium-gray))',
+					'light-gray': 'hsl(var(--spotify-light-gray))'
 				}
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-card': 'var(--gradient-card)'
+			},
+			boxShadow: {
+				'glow': 'var(--shadow-glow)',
+				'card': 'var(--shadow-card)'
+			},
+			transitionProperty: {
+				'smooth': 'var(--transition-smooth)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
