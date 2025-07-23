@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 const GENRES = [
-  { value: '', label: 'Todos los géneros' },
+  { value: 'all', label: 'Todos los géneros' },
   { value: 'rock', label: 'Rock' },
   { value: 'pop', label: 'Pop' },
   { value: 'electronic', label: 'Electronic' },
@@ -23,10 +23,11 @@ const GENRES = [
 
 export default function Header({ onSearch }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('all');
 
   const handleSearch = () => {
-    onSearch(searchQuery, selectedGenre);
+    const genre = selectedGenre === 'all' ? '' : selectedGenre;
+    onSearch(searchQuery, genre);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
