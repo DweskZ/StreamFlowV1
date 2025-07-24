@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useJamendoAPI, searchTracks } from '@/hooks/useJamendoAPI';
 import { JamendoTrack, PlaylistTrack } from '@/types/jamendo';
 import Header from '@/components/Header';
 import TrackCard from '@/components/TrackCard';
 import PlayQueue from '@/components/PlayQueue';
-import MusicPlayer from '@/components/AudioPlayer';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, TrendingUp, Shuffle } from 'lucide-react';
@@ -25,10 +25,17 @@ export default function StreamFlow() {
     limit: 20
   });
   
-  // Playlist state
-  const [queue, setQueue] = useState<PlaylistTrack[]>([]);
-  const [currentTrack, setCurrentTrack] = useState<PlaylistTrack | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const {
+    queue,
+    currentTrack,
+    currentIndex,
+    playTrack,
+    addToQueue,
+    removeFromQueue,
+    selectTrack,
+    nextTrack,
+    shuffleQueue
+  } = usePlayer();
   
   // Display tracks (either search results or popular tracks)
   const displayTracks = searchResults.length > 0 ? searchResults : popularTracks;
@@ -82,90 +89,21 @@ export default function StreamFlow() {
   }, [toast]);
 
   const handlePlay = useCallback((track: JamendoTrack) => {
-    const playlistTrack: PlaylistTrack = {
-      ...track,
-      addedAt: new Date()
-    };
-
-    // If track is not in queue, add it
-    const existingIndex = queue.findIndex(t => t.id === track.id);
-    if (existingIndex === -1) {
-      setQueue(prev => [playlistTrack, ...prev]);
-      setCurrentTrack(playlistTrack);
-      setCurrentIndex(0);
-    } else {
-      setCurrentTrack(queue[existingIndex]);
-      setCurrentIndex(existingIndex);
-    }
-
-    toast({
-      title: "Reproduciendo",
-      description: `${track.name} - ${track.artist_name}`
-    });
-  }, [queue, toast]);
+    playTrack(track);
+  }, [playTrack]);
 
   const handleAddToQueue = useCallback((track: JamendoTrack) => {
-    const existingTrack = queue.find(t => t.id === track.id);
-    if (existingTrack) {
-      toast({
-        title: "Ya en la cola",
-        description: "Esta canción ya está en tu cola de reproducción.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const playlistTrack: PlaylistTrack = {
-      ...track,
-      addedAt: new Date()
-    };
-
-    setQueue(prev => [...prev, playlistTrack]);
-    toast({
-      title: "Agregado a la cola",
-      description: `${track.name} - ${track.artist_name}`
-    });
-  }, [queue, toast]);
+    addToQueue(track);
+  }, [addToQueue]);
 
   const handleRemoveFromQueue = useCallback((trackId: string) => {
-    setQueue(prev => {
-      const newQueue = prev.filter(t => t.id !== trackId);
-      
-      // If current track was removed, play next or stop
-      if (currentTrack?.id === trackId) {
-        const currentIdx = prev.findIndex(t => t.id === trackId);
-        if (newQueue.length > 0) {
-          const nextIdx = currentIdx < newQueue.length ? currentIdx : 0;
-          setCurrentTrack(newQueue[nextIdx]);
-          setCurrentIndex(nextIdx);
-        } else {
-          setCurrentTrack(null);
-          setCurrentIndex(0);
-        }
-      }
-      
-      return newQueue;
-    });
-  }, [currentTrack]);
+    removeFromQueue(trackId);
+  }, [removeFromQueue]);
 
   const handleSelectTrack = useCallback((track: PlaylistTrack) => {
-    const index = queue.findIndex(t => t.id === track.id);
-    if (index !== -1) {
-      setCurrentTrack(track);
-      setCurrentIndex(index);
-    }
-  }, [queue]);
+    selectTrack(track);
+  }, [selectTrack]);
 
-  const handleTrackEnded = useCallback(() => {
-    if (queue.length > 0 && currentIndex < queue.length - 1) {
-      const nextIndex = currentIndex + 1;
-      setCurrentTrack(queue[nextIndex]);
-      setCurrentIndex(nextIndex);
-    } else {
-      setCurrentTrack(null);
-      setCurrentIndex(0);
-    }
-  }, [queue, currentIndex]);
 
   const clearSearch = () => {
     setSearchResults([]);
@@ -174,21 +112,8 @@ export default function StreamFlow() {
     setSearchError(null);
   };
 
-  const shuffleQueue = () => {
-    if (queue.length <= 1) return;
-    
-    const shuffled = [...queue].sort(() => Math.random() - 0.5);
-    setQueue(shuffled);
-    
-    if (currentTrack) {
-      const newIndex = shuffled.findIndex(t => t.id === currentTrack.id);
-      setCurrentIndex(newIndex);
-    }
-    
-    toast({
-      title: "Cola mezclada",
-      description: "Se reorganizó la cola de reproducción aleatoriamente."
-    });
+  const handleShuffleQueue = () => {
+    shuffleQueue();
   };
 
   return (
@@ -224,7 +149,7 @@ export default function StreamFlow() {
                     Música Popular
                   </h2>
                   {queue.length > 1 && (
-                    <Button variant="outline" onClick={shuffleQueue}>
+                    <Button variant="outline" onClick={handleShuffleQueue}>
                       <Shuffle className="h-4 w-4 mr-2" />
                       Mezclar cola
                     </Button>
@@ -298,12 +223,6 @@ export default function StreamFlow() {
           </div>
         </div>
       </div>
-
-      {/* Music Player */}
-      <MusicPlayer
-        currentTrack={currentTrack}
-        onEnded={handleTrackEnded}
-      />
     </div>
   );
 }

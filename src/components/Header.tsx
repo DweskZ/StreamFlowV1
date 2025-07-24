@@ -4,8 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
+
 interface HeaderProps {
-  onSearch: (query: string, genre?: string) => void;
+  onSearch?: (query: string, genre?: string) => void;
 }
 
 const GENRES = [
@@ -22,10 +25,12 @@ const GENRES = [
 ];
 
 export default function Header({ onSearch }: HeaderProps) {
+  const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
 
   const handleSearch = () => {
+    if (!onSearch) return;
     const genre = selectedGenre === 'all' ? '' : selectedGenre;
     onSearch(searchQuery, genre);
   };
@@ -50,42 +55,58 @@ export default function Header({ onSearch }: HeaderProps) {
             </h1>
           </div>
 
-          {/* Search Section */}
-          <div className="flex items-center gap-3 flex-1 max-w-2xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Buscar canciones, artistas, álbumes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="pl-10 bg-input border-border focus:ring-primary"
-              />
+          {onSearch && (
+            <div className="flex items-center gap-3 flex-1 max-w-2xl">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar canciones, artistas, álbumes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="pl-10 bg-input border-border focus:ring-primary"
+                />
+              </div>
+
+              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                <SelectTrigger className="w-48 bg-input border-border">
+                  <SelectValue placeholder="Género" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENRES.map((genre) => (
+                    <SelectItem key={genre.value} value={genre.value}>
+                      {genre.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button onClick={handleSearch} variant="spotify">
+                Buscar
+              </Button>
             </div>
-            
-            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-              <SelectTrigger className="w-48 bg-input border-border">
-                <SelectValue placeholder="Género" />
-              </SelectTrigger>
-              <SelectContent>
-                {GENRES.map((genre) => (
-                  <SelectItem key={genre.value} value={genre.value}>
-                    {genre.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          )}
 
-            <Button onClick={handleSearch} variant="spotify">
-              Buscar
-            </Button>
-          </div>
-
-          {/* App Info */}
-          <div className="text-sm text-muted-foreground hidden md:block">
-            <span className="bg-muted px-2 py-1 rounded text-xs">
-              Música libre de derechos
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground hidden md:block">
+              <span className="bg-muted px-2 py-1 rounded text-xs">
+                Música libre de derechos
+              </span>
+            </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link to="/profile" className="text-sm hover:underline">
+                  {user.email}
+                </Link>
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  Cerrar sesión
+                </Button>
+              </div>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/login">Login</Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>
