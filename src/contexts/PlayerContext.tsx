@@ -11,6 +11,7 @@ interface PlayerContextValue {
   removeFromQueue: (id: string) => void;
   selectTrack: (track: PlaylistTrack) => void;
   nextTrack: () => void;
+  prevTrack: () => void;
   shuffleQueue: () => void;
 }
 
@@ -100,6 +101,14 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [queue, currentIndex]);
 
+  const prevTrack = useCallback(() => {
+    if (queue.length > 0 && currentIndex > 0) {
+      const prevIndex = currentIndex - 1;
+      setCurrentTrack(queue[prevIndex]);
+      setCurrentIndex(prevIndex);
+    }
+  }, [queue, currentIndex]);
+
   const shuffleQueue = useCallback(() => {
     if (queue.length <= 1) return;
     const shuffled = [...queue].sort(() => Math.random() - 0.5);
@@ -112,7 +121,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
   }, [queue, currentTrack, toast]);
 
   return (
-    <PlayerContext.Provider value={{ queue, currentTrack, currentIndex, playTrack, addToQueue, removeFromQueue, selectTrack, nextTrack, shuffleQueue }}>
+    <PlayerContext.Provider value={{ queue, currentTrack, currentIndex, playTrack, addToQueue, removeFromQueue, selectTrack, nextTrack, prevTrack, shuffleQueue }}>
       {children}
     </PlayerContext.Provider>
   );
