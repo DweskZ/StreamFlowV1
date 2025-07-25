@@ -32,7 +32,7 @@ export default function MusicPlayer({ currentTrack, onEnded, onPlay, onPause }: 
 
   if (!currentTrack) {
     return (
-      <Card className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-50 bg-card/95 backdrop-blur-sm border border-border">
+      <Card className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl z-50 bg-card/95 backdrop-blur-sm border border-border">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-center h-16 text-muted-foreground">
             <p>Selecciona una canción para reproducir</p>
@@ -43,7 +43,7 @@ export default function MusicPlayer({ currentTrack, onEnded, onPlay, onPause }: 
   }
 
   return (
-    <Card className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-50 bg-card/95 backdrop-blur-sm border border-border">
+    <Card className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl z-50 bg-card/95 backdrop-blur-sm border border-border">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center gap-4">
           {/* Current Track Info */}
@@ -98,7 +98,7 @@ export default function MusicPlayer({ currentTrack, onEnded, onPlay, onPause }: 
           </div>
 
           {/* Audio Player */}
-          <div className="flex-1 max-w-2xl">
+          <div className="flex-1 max-w-4xl">
             <AudioPlayer
               ref={audioRef}
               src={isReady ? currentTrack.audio : ''}
