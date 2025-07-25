@@ -1,53 +1,63 @@
-# Welcome to your Lovable project
+# StreamFlow - Descubre Música Libre
 
-## Project info
+StreamFlow es una aplicación web para descubrir y reproducir música libre de derechos utilizando la API de Jamendo.
 
-**URL**: https://lovable.dev/projects/07b31bdf-0989-4bdc-99ff-5c339acf861e
+## Características
 
-## How can I edit this code?
+- 🎵 Explorar música popular
+- 🔍 Búsqueda de canciones por nombre y género
+- 🎧 Reproductor de audio integrado
+- 📝 Cola de reproducción
+- 👤 Sistema de autenticación
+- 📱 Diseño responsive
 
-There are several ways of editing your application.
+## Tecnologías
 
-**Use Lovable**
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- Shadcn/ui
+- Supabase (autenticación)
+- API de Jamendo
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/07b31bdf-0989-4bdc-99ff-5c339acf861e) and start prompting.
+## Instalación y uso
 
-Changes made via Lovable will be committed automatically to this repo.
+Asegúrate de tener Node.js instalado - [instalar con nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Sigue estos pasos:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Paso 1: Clona el repositorio
+git clone <TU_URL_GIT>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Paso 2: Navega al directorio del proyecto
+cd streamflow-music-discovery
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Paso 3: Instala las dependencias
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Paso 4: Inicia el servidor de desarrollo
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Scripts disponibles
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `npm run dev` - Inicia el servidor de desarrollo
+- `npm run build` - Construye la aplicación para producción
+- `npm run preview` - Vista previa de la construcción de producción
+- `npm run lint` - Ejecuta el linter
 
-**Use GitHub Codespaces**
+## Estructura del proyecto
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
+```
+src/
+├── components/     # Componentes reutilizables
+├── contexts/       # Contextos de React
+├── hooks/          # Hooks personalizados
+├── pages/          # Páginas de la aplicación
+├── types/          # Definiciones de tipos TypeScript
+└── lib/            # Utilidades
+```
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
 ## What technologies are used for this project?

@@ -24,12 +24,12 @@ export default function Login() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   if (user) {
-    navigate('/');
+    navigate('/app');
   }
 
   const onSubmitSignIn = async (data: FormData) => {
     await signIn(data.email, data.password);
-    navigate('/');
+    navigate('/app');
   };
 
   const onSubmitSignUp = async (data: FormData) => {

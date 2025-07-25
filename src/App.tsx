@@ -6,11 +6,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import Home from './pages/Home';
 import StreamFlow from './pages/StreamFlow';
 import MainLayout from './components/MainLayout';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PlayerProvider } from './contexts/PlayerContext';
-import { useAuth } from './contexts/AuthContext';
 
 const queryClient = new QueryClient();
 
@@ -34,9 +34,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route element={<ProtectedLayout />}>
-                <Route path="/" element={<StreamFlow />} />
+                <Route path="/app" element={<StreamFlow />} />
                 <Route path="/profile" element={<Profile />} />
               </Route>
               <Route path="*" element={<NotFound />} />
