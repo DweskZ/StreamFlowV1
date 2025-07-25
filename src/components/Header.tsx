@@ -103,9 +103,14 @@ export default function Header({ onSearch }: HeaderProps) {
                 </Button>
               </div>
             ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/login">Login</Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/login">Iniciar sesión</Link>
+                </Button>
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/login">Registrarse</Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>
