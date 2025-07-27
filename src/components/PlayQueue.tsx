@@ -1,4 +1,4 @@
-import { X, Music, GripVertical } from 'lucide-react';
+import { X, Radio, GripVertical, Zap, Activity, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,18 +20,29 @@ export default function PlayQueue({
 }: PlayQueueProps) {
   if (queue.length === 0) {
     return (
-      <Card className="w-80 bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Music className="h-5 w-5" />
-            Cola de reproducción
+      <Card className="w-80 cyber-card border-purple-500/30">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-3 text-white">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+              <Radio className="h-4 w-4 text-white" />
+            </div>
+            Matriz de reproducción
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No hay canciones en la cola</p>
-            <p className="text-sm mt-1">Agrega canciones para reproducir</p>
+          <div className="text-center py-12 text-gray-400">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-purple-500/30">
+                <Radio className="h-10 w-10 text-purple-400 opacity-60" />
+              </div>
+            </div>
+            <p className="text-lg text-white mb-2">Matriz vacía</p>
+            <p className="text-sm text-gray-400">
+              Agrega frecuencias para inicializar la transmisión
+            </p>
+            <div className="mt-4 w-full h-1 bg-black/30 rounded-full overflow-hidden">
+              <div className="h-full w-1/3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full animate-pulse" />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -39,62 +50,95 @@ export default function PlayQueue({
   }
 
   return (
-    <Card className="w-80 bg-card border-border">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Music className="h-5 w-5" />
-          Cola de reproducción
-          <span className="text-sm font-normal text-muted-foreground">
-            ({queue.length})
+    <Card className="w-80 cyber-card border-purple-500/30 shadow-glow-purple/20">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg flex items-center gap-3 text-white">
+          <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center animate-pulse">
+            <Radio className="h-4 w-4 text-white" />
+          </div>
+          Matriz Neural
+          <span className="text-sm font-normal text-purple-300 bg-purple-600/20 border border-purple-500/30 px-2 py-1 rounded-full">
+            {queue.length} streams
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <ScrollArea className="h-96 scrollbar-thin">
-          <div className="space-y-1 p-2">
+        <ScrollArea className="h-96 login-scroll">
+          <div className="space-y-2 p-3">
             {queue.map((track, index) => (
               <div
                 key={`${track.id}-${track.addedAt.getTime()}`}
-                className={`group flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                  currentTrack?.id === track.id ? 'bg-primary/10 border border-primary/20' : ''
+                className={`group relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer border ${
+                  currentTrack?.id === track.id 
+                    ? 'bg-gradient-to-r from-purple-600/30 to-pink-600/30 border-purple-400/50 shadow-glow-purple/30' 
+                    : 'bg-black/20 border-purple-500/20 hover:border-purple-400/40 hover:bg-purple-600/10'
                 }`}
                 onClick={() => onSelectTrack(track)}
               >
+                {/* Animated border for current track */}
+                {currentTrack?.id === track.id && (
+                  <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-gradient-to-br from-purple-500/30 to-pink-500/30 animate-pulse" />
+                )}
+
                 {/* Drag Handle */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10">
+                  <GripVertical className="h-4 w-4 text-purple-400 cursor-grab hover:text-purple-300" />
                 </div>
 
-                {/* Track Number */}
-                <div className="w-6 text-sm text-muted-foreground text-center">
+                {/* Track Number / Playing Indicator */}
+                <div className="w-8 text-sm text-center relative z-10">
                   {currentTrack?.id === track.id ? (
-                    <div className="w-3 h-3 bg-spotify-green rounded-full animate-pulse mx-auto" />
+                    <div className="flex items-center justify-center">
+                      <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                    </div>
                   ) : (
-                    index + 1
+                    <span className="text-gray-400 font-mono text-xs bg-black/30 w-6 h-6 rounded-full flex items-center justify-center">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
                   )}
                 </div>
 
                 {/* Album Cover */}
-                <img
-                  src={track.album_image || track.image || '/placeholder.svg'}
-                  alt={`${track.album_name} cover`}
-                  className="w-10 h-10 rounded object-cover flex-shrink-0"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder.svg';
-                  }}
-                />
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={track.album_image || track.image || '/placeholder.svg'}
+                    alt={`${track.album_name} cover`}
+                    className="w-12 h-12 rounded-lg object-cover border border-purple-500/30"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder.svg';
+                    }}
+                  />
+                  {currentTrack?.id === track.id && (
+                    <div className="absolute inset-0 rounded-lg border-2 border-cyan-400/50 animate-pulse" />
+                  )}
+                </div>
 
                 {/* Track Info */}
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${
-                    currentTrack?.id === track.id ? 'text-primary' : 'text-foreground'
+                <div className="flex-1 min-w-0 relative z-10">
+                  <p className={`text-sm font-medium truncate transition-colors ${
+                    currentTrack?.id === track.id ? 'text-white' : 'text-gray-300 group-hover:text-white'
                   }`}>
                     {track.name}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className={`text-xs truncate transition-colors ${
+                    currentTrack?.id === track.id ? 'text-purple-300' : 'text-gray-500 group-hover:text-gray-400'
+                  }`}>
                     {track.artist_name}
                   </p>
+                </div>
+
+                {/* Status Indicator */}
+                <div className="relative z-10">
+                  {currentTrack?.id === track.id ? (
+                    <div className="flex items-center gap-1">
+                      <Activity className="w-3 h-3 text-cyan-400 animate-pulse" />
+                    </div>
+                  ) : (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Zap className="w-3 h-3 text-purple-400" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Remove Button */}
@@ -105,7 +149,7 @@ export default function PlayQueue({
                     e.stopPropagation();
                     onRemoveFromQueue(track.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-destructive"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-gray-400 hover:text-red-400 hover:bg-red-500/10 relative z-10"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -113,6 +157,19 @@ export default function PlayQueue({
             ))}
           </div>
         </ScrollArea>
+        
+        {/* Queue Stats */}
+        <div className="p-3 border-t border-purple-500/20 bg-black/20">
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <Radio className="w-3 h-3" />
+              {queue.length} frecuencias cargadas
+            </span>
+            <span className="text-purple-400 font-mono">
+              NEURAL_MATRIX_ACTIVE
+            </span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

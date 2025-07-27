@@ -11,6 +11,9 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithGithub: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -68,8 +71,69 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      setError(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ 
+        title: 'Correo enviado', 
+        description: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña' 
+      });
+    }
+    setLoading(false);
+  };
+
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/app`
+      }
+    });
+    if (error) {
+      setError(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+    setLoading(false);
+  };
+
+  const signInWithGithub = async () => {
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${window.location.origin}/app`
+      }
+    });
+    if (error) {
+      setError(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+    setLoading(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, error, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      error, 
+      signIn, 
+      signUp, 
+      signOut, 
+      resetPassword,
+      signInWithGoogle,
+      signInWithGithub
+    }}>
       {children}
     </AuthContext.Provider>
   );
