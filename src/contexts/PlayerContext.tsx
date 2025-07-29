@@ -14,6 +14,7 @@ interface PlayerContextValue {
   nextTrack: () => void;
   prevTrack: () => void;
   shuffleQueue: () => void;
+  onTrackPlay?: (track: Track) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -25,6 +26,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
   const [queue, setQueue] = useState<PlaylistTrack[]>(() => QueueStorage.load());
   const [currentTrack, setCurrentTrack] = useState<PlaylistTrack | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [onTrackPlay, setOnTrackPlay] = useState<((track: Track) => void) | undefined>();
 
   useEffect(() => {
   QueueStorage.save(queue);
@@ -41,8 +43,14 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentTrack(queue[existingIndex]);
       setCurrentIndex(existingIndex);
     }
+    
+    // Notify library context about track play
+    if (onTrackPlay) {
+      onTrackPlay(track);
+    }
+    
     toast({ title: 'Reproduciendo', description: `${track.name} - ${track.artist_name}` });
-  }, [queue, toast]);
+  }, [queue, toast, onTrackPlay]);
 
   const addToQueue = useCallback((track: Track) => {
     if (queue.find(t => t.id === track.id)) {
@@ -111,7 +119,19 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
   }, [queue, currentTrack, toast]);
 
   return (
-    <PlayerContext.Provider value={{ queue, currentTrack, currentIndex, playTrack, addToQueue, removeFromQueue, selectTrack, nextTrack, prevTrack, shuffleQueue }}>
+    <PlayerContext.Provider value={{ 
+      queue, 
+      currentTrack, 
+      currentIndex, 
+      playTrack, 
+      addToQueue, 
+      removeFromQueue, 
+      selectTrack, 
+      nextTrack, 
+      prevTrack, 
+      shuffleQueue,
+      onTrackPlay
+    }}>
       {children}
     </PlayerContext.Provider>
   );

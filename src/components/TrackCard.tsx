@@ -1,7 +1,18 @@
-import { Play, Plus, Clock, Zap, Volume2 } from 'lucide-react';
+import { Play, Plus, Clock, Zap, Volume2, Heart, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Track } from '@/types/music';
+import { useLibrary } from '@/contexts/LibraryContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TrackCardProps {
   track: Track;
