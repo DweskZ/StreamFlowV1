@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { JamendoTrack, JamendoResponse } from '@/types/jamendo';
 
-const API_URL = 'https://api.jamendo.com/v3.0/tracks/';
-const CLIENT_ID = 'e4782328';
+// Usar el backend local en lugar de llamar directamente a Jamendo
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 export default function useTrendingSongs() {
   const [tracks, setTracks] = useState<JamendoTrack[]>([]);
@@ -14,20 +14,21 @@ export default function useTrendingSongs() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<JamendoResponse>(API_URL, {
-        params: {
-          client_id: CLIENT_ID,
-          format: 'json',
-          order: 'popularity_total',
-          limit: 10,
-          audioformat: 'mp32'
-        }
+      console.log('🔍 Fetching trending songs from backend...');
+      
+      const response = await axios.get<JamendoResponse>(`${BACKEND_URL}/api/chart?limit=10`, {
+        timeout: 10000,
       });
-      setTracks(response.data.results);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error cargando canciones';
+
+      if (response.data.headers.status === 'success') {
+        setTracks(response.data.results);
+      } else {
+        throw new Error(response.data.headers.error_message || 'Error al obtener canciones trending');
+      }
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Error cargando canciones trending';
       setError(message);
-      console.error('useTrendingSongs', err);
+      console.error('❌ Error in useTrendingSongs:', err);
     } finally {
       setLoading(false);
     }
@@ -37,19 +38,21 @@ export default function useTrendingSongs() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<JamendoResponse>(API_URL, {
-        params: {
-          client_id: CLIENT_ID,
-          format: 'json',
-          search: query,
-          limit: 10,
-          audioformat: 'mp32'
-        }
+      console.log(`🔍 Searching for: "${query}" via backend...`);
+      
+      const response = await axios.get<JamendoResponse>(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}&limit=10`, {
+        timeout: 10000,
       });
-      setTracks(response.data.results);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error buscando canciones';
+
+      if (response.data.headers.status === 'success') {
+        setTracks(response.data.results);
+      } else {
+        throw new Error(response.data.headers.error_message || 'Error al buscar canciones');
+      }
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Error buscando canciones';
       setError(message);
+      console.error('❌ Error in search:', err);
     } finally {
       setLoading(false);
     }

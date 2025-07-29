@@ -19,9 +19,8 @@ export default function StreamFlow() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   
-  // Popular tracks (initial load)
-  const { tracks: popularTracks, loading: popularLoading, error: popularError } = useJamendoAPI({
-    order: 'popularity_total',
+  // Popular tracks (charts from backend)
+  const { tracks: popularTracks, loading: popularLoading, error: popularError, fetchTracks } = useJamendoAPI({
     limit: 20
   });
   
@@ -55,9 +54,9 @@ export default function StreamFlow() {
     setSearchGenre(genre || '');
 
     try {
+      // Usar fetchTracks del hook para búsquedas
       const results = await searchTracks({
         name: query.trim() || undefined,
-        tags: genre || undefined,
         limit: 30
       });
 

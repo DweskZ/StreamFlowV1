@@ -1,0 +1,23 @@
+{
+  "name": "streamflow-backend",
+  "version": "1.0.0",
+  "description": "Backend API para StreamFlow Music Discovery usando Deezer API",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "keywords": ["music", "api", "deezer", "express"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

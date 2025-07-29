@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { JamendoResponse, JamendoTrack } from '@/types/jamendo';
+import axios from 'axios';
 
-const BASE_URL = 'https://api.jamendo.com/v3.0/tracks/';
-const CLIENT_ID = 'e4782328';
+// Usar el backend local en lugar de llamar directamente a Jamendo
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 interface UseJamendoAPIParams {
   order?: string;
@@ -17,73 +18,87 @@ export const useJamendoAPI = (params: UseJamendoAPIParams = {}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTracks = async () => {
+  const fetchTracks = async (searchQuery?: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('client_id', CLIENT_ID);
-      queryParams.append('format', 'json');
-      queryParams.append('audioformat', 'mp32');
-      queryParams.append('limit', (params.limit || 20).toString());
-      queryParams.append('offset', (params.offset || 0).toString());
+      let url = `${BACKEND_URL}/api`;
       
-      if (params.order) queryParams.append('order', params.order);
-      if (params.name) queryParams.append('name', params.name);
-      if (params.tags) queryParams.append('tags', params.tags);
-
-      const response = await fetch(`${BASE_URL}?${queryParams}`);
-      
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      if (searchQuery || params.name) {
+        // Búsqueda
+        const query = searchQuery || params.name || '';
+        url += `/search?q=${encodeURIComponent(query)}`;
+        if (params.limit) url += `&limit=${params.limit}`;
+      } else {
+        // Charts por defecto
+        url += `/chart`;
+        if (params.limit) url += `?limit=${params.limit}`;
       }
 
-      const data: JamendoResponse = await response.json();
-      
-      if (data.headers.code !== 0) {
-        throw new Error(data.headers.error_message || 'Error en la API de Jamendo');
-      }
+      console.log('🔍 Fetching from backend:', url);
 
-      setTracks(data.results);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido al cargar las canciones');
-      console.error('Error fetching tracks:', err);
+      const response = await axios.get<JamendoResponse>(url, {
+        timeout: 10000,
+      });
+
+      if (response.data.headers.status === 'success') {
+        setTracks(response.data.results);
+      } else {
+        throw new Error(response.data.headers.error_message || 'Error al obtener canciones');
+      }
+    } catch (err: any) {
+      console.error('❌ Error fetching tracks from backend:', err);
+      setError(err.response?.data?.message || err.message || 'Error de conexión con el backend');
+      setTracks([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTracks();
-  }, [JSON.stringify(params)]);
+    // Solo auto-fetch para charts, no para búsquedas
+    if (!params.name) {
+      fetchTracks();
+    }
+  }, [params.limit, params.order]);
 
-  return { tracks, loading, error, refetch: fetchTracks };
+  return { 
+    tracks, 
+    loading, 
+    error, 
+    refetch: fetchTracks,
+    fetchTracks // Añadir este método para búsquedas
+  };
 };
 
 export const searchTracks = async (searchParams: UseJamendoAPIParams): Promise<JamendoTrack[]> => {
-  const queryParams = new URLSearchParams();
-  queryParams.append('client_id', CLIENT_ID);
-  queryParams.append('format', 'json');
-  queryParams.append('audioformat', 'mp32');
-  queryParams.append('limit', (searchParams.limit || 20).toString());
-  queryParams.append('offset', (searchParams.offset || 0).toString());
-  
-  if (searchParams.order) queryParams.append('order', searchParams.order);
-  if (searchParams.name) queryParams.append('name', searchParams.name);
-  if (searchParams.tags) queryParams.append('tags', searchParams.tags);
+  try {
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    
+    let url = `${BACKEND_URL}/api`;
+    
+    if (searchParams.name) {
+      // Búsqueda
+      url += `/search?q=${encodeURIComponent(searchParams.name)}`;
+      if (searchParams.limit) url += `&limit=${searchParams.limit}`;
+    } else {
+      // Charts por defecto
+      url += `/chart`;
+      if (searchParams.limit) url += `?limit=${searchParams.limit}`;
+    }
 
-  const response = await fetch(`${BASE_URL}?${queryParams}`);
-  
-  if (!response.ok) {
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
+    const response = await axios.get<JamendoResponse>(url, {
+      timeout: 10000,
+    });
+
+    if (response.data.headers.status === 'success') {
+      return response.data.results;
+    } else {
+      throw new Error(response.data.headers.error_message || 'Error al obtener canciones');
+    }
+  } catch (err: any) {
+    console.error('❌ Error in searchTracks:', err);
+    throw new Error(err.response?.data?.message || err.message || 'Error de conexión con el backend');
   }
-
-  const data: JamendoResponse = await response.json();
-  
-  if (data.headers.code !== 0) {
-    throw new Error(data.headers.error_message || 'Error en la API de Jamendo');
-  }
-
-  return data.results;
 };
