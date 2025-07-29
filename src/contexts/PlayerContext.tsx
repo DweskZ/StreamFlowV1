@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Track, PlaylistTrack } from '@/types/music';
+import { QueueStorage } from '@/lib/QueueStorage';
 
 interface PlayerContextValue {
   queue: PlaylistTrack[];
@@ -21,23 +22,12 @@ const STORAGE_KEY = 'sf_queue_v1';
 
 export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
-  const [queue, setQueue] = useState<PlaylistTrack[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed: PlaylistTrack[] = JSON.parse(stored);
-        return parsed.map(t => ({ ...t, addedAt: new Date(t.addedAt) }));
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+  const [queue, setQueue] = useState<PlaylistTrack[]>(() => QueueStorage.load());
   const [currentTrack, setCurrentTrack] = useState<PlaylistTrack | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  QueueStorage.save(queue);
   }, [queue]);
 
   const playTrack = useCallback((track: Track) => {

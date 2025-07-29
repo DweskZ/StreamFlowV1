@@ -1,15 +1,9 @@
+// hooks/useDeezerAPI.ts
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { DeezerUrlBuilder } from '../lib/api/DeezerBuilder';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-
-interface UseDeezerAPIParams {
-  order?: string;
-  name?: string;
-  tags?: string;
-  limit?: number;
-  offset?: number;
-}
 
 export interface DeezerTrack {
   id: string;
@@ -65,7 +59,15 @@ interface DeezerResponse {
   results: DeezerTrack[];
 }
 
-// Hook para obtener canciones
+interface UseDeezerAPIParams {
+  order?: string;
+  name?: string;
+  tags?: string;
+  limit?: number;
+  offset?: number;
+}
+
+// 🎯 PRINCIPIO SRP aplicado con DeezerUrlBuilder
 export const useDeezerAPI = (params: UseDeezerAPIParams = {}) => {
   const [tracks, setTracks] = useState<DeezerTrack[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,17 +78,13 @@ export const useDeezerAPI = (params: UseDeezerAPIParams = {}) => {
     setError(null);
 
     try {
-      let url = `${BACKEND_URL}/api`;
+      const urlBuilder = new DeezerUrlBuilder({
+        searchQuery,
+        name: params.name,
+        limit: params.limit,
+      });
 
-      if (searchQuery || params.name) {
-        const query = searchQuery || params.name || '';
-        url += `/search?q=${encodeURIComponent(query)}`;
-        if (params.limit) url += `&limit=${params.limit}`;
-      } else {
-        url += `/chart`;
-        if (params.limit) url += `?limit=${params.limit}`;
-      }
-
+      const url = urlBuilder.build();
       const response = await axios.get<DeezerResponse>(url, { timeout: 10000 });
 
       if (response.data.headers.status === 'success') {
@@ -109,7 +107,7 @@ export const useDeezerAPI = (params: UseDeezerAPIParams = {}) => {
   return { tracks, loading, error, refetch: fetchTracks };
 };
 
-// Obtener detalle de canción por ID
+// ✅ Resto sin tocar
 export const useDeezerTrack = (trackId: string | null) => {
   const [track, setTrack] = useState<DeezerTrack | null>(null);
   const [loading, setLoading] = useState(false);
@@ -144,7 +142,6 @@ export const useDeezerTrack = (trackId: string | null) => {
   return { track, loading, error, refetch: fetchTrack };
 };
 
-// Búsqueda directa sin hook
 export const searchTracks = async (query: string): Promise<DeezerTrack[]> => {
   const response = await axios.get<DeezerResponse>(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}`);
   if (response.data.headers.status === 'success') {
@@ -153,7 +150,6 @@ export const searchTracks = async (query: string): Promise<DeezerTrack[]> => {
   throw new Error('Error al buscar canciones');
 };
 
-// Hook para artistas
 export const useDeezerArtistSearch = () => {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -193,8 +189,6 @@ export interface PlaylistTrack extends DeezerTrack {
   addedAt: Date;
 }
 
-
-// Check de estado del backend
 export const checkBackendHealth = async (): Promise<boolean> => {
   try {
     const response = await axios.get(`${BACKEND_URL}/`, { timeout: 5000 });

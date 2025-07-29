@@ -1,3 +1,4 @@
+// StreamRefactor/src/integrations/supabase/types.ts
 export type Json =
   | string
   | number
