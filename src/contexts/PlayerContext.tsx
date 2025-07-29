@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { JamendoTrack, PlaylistTrack } from '@/types/jamendo';
+import { Track, PlaylistTrack } from '@/types/music';
 
 interface PlayerContextValue {
   queue: PlaylistTrack[];
   currentTrack: PlaylistTrack | null;
   currentIndex: number;
-  playTrack: (track: JamendoTrack) => void;
-  addToQueue: (track: JamendoTrack) => void;
+  playTrack: (track: Track) => void;
+  addToQueue: (track: Track) => void;
   removeFromQueue: (id: string) => void;
   selectTrack: (track: PlaylistTrack) => void;
   nextTrack: () => void;
@@ -40,7 +40,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
   }, [queue]);
 
-  const playTrack = useCallback((track: JamendoTrack) => {
+  const playTrack = useCallback((track: Track) => {
     const playlistTrack: PlaylistTrack = { ...track, addedAt: new Date() };
     const existingIndex = queue.findIndex(t => t.id === track.id);
     if (existingIndex === -1) {
@@ -54,7 +54,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     toast({ title: 'Reproduciendo', description: `${track.name} - ${track.artist_name}` });
   }, [queue, toast]);
 
-  const addToQueue = useCallback((track: JamendoTrack) => {
+  const addToQueue = useCallback((track: Track) => {
     if (queue.find(t => t.id === track.id)) {
       toast({ title: 'Ya en la cola', description: 'Esta canción ya está en tu cola de reproducción.', variant: 'destructive' });
       return;

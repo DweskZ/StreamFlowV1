@@ -1,12 +1,12 @@
+// hooks/useTrendingSongs.ts
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { JamendoTrack, JamendoResponse } from '@/types/jamendo';
+import { Track, ApiResponse } from '@/types/music';
 
-// Usar el backend local en lugar de llamar directamente a Jamendo
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 export default function useTrendingSongs() {
-  const [tracks, setTracks] = useState<JamendoTrack[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,8 +15,7 @@ export default function useTrendingSongs() {
     setError(null);
     try {
       console.log('🔍 Fetching trending songs from backend...');
-      
-      const response = await axios.get<JamendoResponse>(`${BACKEND_URL}/api/chart?limit=10`, {
+      const response = await axios.get<ApiResponse>(`${BACKEND_URL}/api/chart?limit=10`, {
         timeout: 10000,
       });
 
@@ -39,10 +38,10 @@ export default function useTrendingSongs() {
     setError(null);
     try {
       console.log(`🔍 Searching for: "${query}" via backend...`);
-      
-      const response = await axios.get<JamendoResponse>(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}&limit=10`, {
-        timeout: 10000,
-      });
+      const response = await axios.get<ApiResponse>(
+        `${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}&limit=10`,
+        { timeout: 10000 }
+      );
 
       if (response.data.headers.status === 'success') {
         setTracks(response.data.results);

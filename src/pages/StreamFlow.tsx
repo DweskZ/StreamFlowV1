@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useJamendoAPI, searchTracks } from '@/hooks/useJamendoAPI';
-import { JamendoTrack, PlaylistTrack } from '@/types/jamendo';
+import { useMusicAPI, searchTracks } from '@/hooks/useMusicAPI';
+import { Track, PlaylistTrack } from '@/types/music';
 import Header from '@/components/Header';
 import TrackCard from '@/components/TrackCard';
 import PlayQueue from '@/components/PlayQueue';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, TrendingUp, Shuffle, Radio, Zap, Search, Activity } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,28 +15,24 @@ export default function StreamFlow() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchGenre, setSearchGenre] = useState('');
-  const [searchResults, setSearchResults] = useState<JamendoTrack[]>([]);
+  const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  
-  // Popular tracks (charts from backend)
-  const { tracks: popularTracks, loading: popularLoading, error: popularError, fetchTracks } = useJamendoAPI({
+
+  const { tracks: popularTracks, loading: popularLoading, error: popularError, refetch: fetchTracks } = useMusicAPI({
     limit: 20
   });
-  
+
   const {
     queue,
     currentTrack,
-    currentIndex,
     playTrack,
     addToQueue,
     removeFromQueue,
     selectTrack,
-    nextTrack,
     shuffleQueue
   } = usePlayer();
-  
-  // Display tracks (either search results or popular tracks)
+
   const displayTracks = searchResults.length > 0 ? searchResults : popularTracks;
   const isShowingSearchResults = searchResults.length > 0;
 
@@ -54,14 +50,10 @@ export default function StreamFlow() {
     setSearchGenre(genre || '');
 
     try {
-      // Usar fetchTracks del hook para búsquedas
-      const results = await searchTracks({
-        name: query.trim() || undefined,
-        limit: 30
-      });
+      const results = await searchTracks(query.trim());
 
       setSearchResults(results);
-      
+
       if (results.length === 0) {
         toast({
           title: "Señal no encontrada",
@@ -87,11 +79,11 @@ export default function StreamFlow() {
     }
   }, [toast]);
 
-  const handlePlay = useCallback((track: JamendoTrack) => {
+  const handlePlay = useCallback((track: Track) => {
     playTrack(track);
   }, [playTrack]);
 
-  const handleAddToQueue = useCallback((track: JamendoTrack) => {
+  const handleAddToQueue = useCallback((track: Track) => {
     addToQueue(track);
   }, [addToQueue]);
 

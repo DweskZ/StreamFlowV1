@@ -1,4 +1,6 @@
-export interface JamendoTrack {
+// types/music.ts
+
+export interface Track {
   id: string;
   name: string;
   duration: string;
@@ -9,15 +11,15 @@ export interface JamendoTrack {
   album_name: string;
   album_image: string;
   album_images: {
-    "size25": string;
-    "size50": string;
-    "size100": string;
-    "size130": string;
-    "size200": string;
-    "size300": string;
-    "size400": string;
-    "size500": string;
-    "size600": string;
+    size25: string;
+    size50: string;
+    size100: string;
+    size130: string;
+    size200: string;
+    size300: string;
+    size400: string;
+    size500: string;
+    size600: string;
   };
   license_ccurl: string;
   position: number;
@@ -39,7 +41,7 @@ export interface JamendoTrack {
   };
 }
 
-export interface JamendoResponse {
+export interface ApiResponse {
   headers: {
     status: string;
     code: number;
@@ -47,9 +49,9 @@ export interface JamendoResponse {
     warnings: string;
     results_fullcount: number;
   };
-  results: JamendoTrack[];
+  results: Track[];
 }
 
-export interface PlaylistTrack extends JamendoTrack {
+export interface PlaylistTrack extends Track {
   addedAt: Date;
 }

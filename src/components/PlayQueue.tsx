@@ -2,7 +2,7 @@ import { X, Radio, GripVertical, Zap, Activity, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlaylistTrack } from '@/types/jamendo';
+import { PlaylistTrack } from '@/types/music';
 
 interface PlayQueueProps {
   queue: PlaylistTrack[];

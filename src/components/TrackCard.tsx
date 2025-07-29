@@ -1,12 +1,12 @@
 import { Play, Plus, Clock, Zap, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { JamendoTrack } from '@/types/jamendo';
+import { Track } from '@/types/music';
 
 interface TrackCardProps {
-  track: JamendoTrack;
-  onPlay: (track: JamendoTrack) => void;
-  onAddToQueue: (track: JamendoTrack) => void;
+  track: Track;
+  onPlay: (track: Track) => void;
+  onAddToQueue: (track: Track) => void;
   isPlaying?: boolean;
 }
 

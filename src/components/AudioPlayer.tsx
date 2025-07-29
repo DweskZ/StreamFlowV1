@@ -1,14 +1,14 @@
 import { useRef, useEffect, useState } from 'react';
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
-import { JamendoTrack, PlaylistTrack } from '@/types/jamendo';
+import type { DeezerTrack, PlaylistTrack } from '@/hooks/useDeezerAPI';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Info, Radio, Waves } from 'lucide-react';
 
 interface AudioPlayerProps {
-  readonly currentTrack: PlaylistTrack | JamendoTrack | null;
+  readonly currentTrack: PlaylistTrack | DeezerTrack | null;
   readonly onEnded: () => void;
   readonly onPlay?: () => void;
   readonly onPause?: () => void;
@@ -22,12 +22,12 @@ export default function MusicPlayer({ currentTrack, onEnded, onPlay, onPause, on
   useEffect(() => {
     if (currentTrack && audioRef.current) {
       setIsReady(false);
-      // Small delay to ensure the audio element is updated
       setTimeout(() => {
         setIsReady(true);
       }, 100);
     }
   }, [currentTrack]);
+
 
   if (!currentTrack) {
     return (
