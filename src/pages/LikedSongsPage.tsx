@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Button } from '@/components/ui/button';
@@ -70,14 +70,16 @@ const LikedSongsPage = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-end gap-6">
-        <div className="h-60 w-60 bg-gradient-to-br from-purple-700 to-blue-500 rounded-lg flex items-center justify-center shadow-2xl">
-          <Heart className="h-20 w-20 text-white" />
+        <div className="h-60 w-60 bg-gradient-to-br from-neon-purple via-neon-pink to-neon-cyan rounded-xl flex items-center justify-center shadow-glow-purple/50 border border-neon-purple/30">
+          <Heart className="h-20 w-20 text-white fill-current animate-pulse" />
         </div>
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-white">PLAYLIST</p>
-            <h1 className="text-5xl font-bold text-white mb-2">Canciones que te gustan</h1>
-            <p className="text-zinc-400">
+            <p className="text-sm font-medium text-neon-cyan uppercase tracking-wider">PLAYLIST</p>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-cyan bg-clip-text text-transparent mb-2">
+              Canciones que te gustan
+            </h1>
+            <p className="text-muted-foreground">
               {likedSongs.length} canción{likedSongs.length !== 1 ? 'es' : ''}
             </p>
           </div>
@@ -88,16 +90,16 @@ const LikedSongsPage = () => {
       <div className="flex items-center gap-4">
         <Button
           size="lg"
-          className="h-14 w-14 rounded-full bg-green-600 hover:bg-green-700 p-0"
+          className="h-14 w-14 rounded-full neon-button p-0 hover:scale-110 transition-all duration-300"
           onClick={playAllSongs}
           disabled={filteredSongs.length === 0}
         >
-          <Play className="h-6 w-6 text-white" />
+          <Play className="h-6 w-6 text-white fill-white ml-1" />
         </Button>
         <Button
           variant="ghost"
           size="lg"
-          className="text-zinc-400 hover:text-white"
+          className="text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
           onClick={shufflePlayAll}
           disabled={filteredSongs.length === 0}
         >
@@ -105,12 +107,16 @@ const LikedSongsPage = () => {
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="lg" className="text-zinc-400 hover:text-white">
+            <Button 
+              variant="ghost" 
+              size="lg" 
+              className="text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300"
+            >
               <MoreHorizontal className="h-6 w-6" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-zinc-800 border-zinc-700">
-            <DropdownMenuItem className="text-white hover:bg-zinc-700">
+          <DropdownMenuContent className="cyber-card border-neon backdrop-blur-glass">
+            <DropdownMenuItem className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300">
               <Download className="h-4 w-4 mr-2" />
               Descargar
             </DropdownMenuItem>
@@ -121,41 +127,41 @@ const LikedSongsPage = () => {
       {/* Search */}
       {likedSongs.length > 0 && (
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Buscar en canciones que te gustan"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-400"
+            className="pl-10 bg-black/30 border-neon-purple/30 text-foreground placeholder:text-muted-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all"
           />
         </div>
       )}
 
       {/* Song List */}
       {likedSongs.length === 0 ? (
-        <Card className="bg-zinc-800/50 border-zinc-700">
+        <Card className="cyber-card border-neon">
           <CardContent className="p-12 text-center">
-            <Heart className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <Heart className="h-16 w-16 text-neon-purple/50 mx-auto mb-4 animate-pulse" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               No tienes canciones que te gusten
             </h3>
-            <p className="text-zinc-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Las canciones que marques como favoritas aparecerán aquí.
             </p>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="neon-button">
               Buscar música
             </Button>
           </CardContent>
         </Card>
       ) : filteredSongs.length === 0 ? (
-        <Card className="bg-zinc-800/50 border-zinc-700">
+        <Card className="cyber-card border-neon">
           <CardContent className="p-8 text-center">
-            <Search className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">
+            <Search className="h-12 w-12 text-neon-purple/50 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               No se encontraron canciones
             </h3>
-            <p className="text-zinc-400">
+            <p className="text-muted-foreground">
               Intenta con otro término de búsqueda.
             </p>
           </CardContent>
@@ -163,7 +169,7 @@ const LikedSongsPage = () => {
       ) : (
         <div className="space-y-2">
           {/* Header Row */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-zinc-400 border-b border-zinc-800">
+          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-muted-foreground border-b border-neon-purple/20">
             <div className="col-span-1">#</div>
             <div className="col-span-6">TÍTULO</div>
             <div className="col-span-3">ÁLBUM</div>
@@ -178,15 +184,15 @@ const LikedSongsPage = () => {
             <div
               key={track.id}
               className={cn(
-                "grid grid-cols-12 gap-4 px-4 py-2 rounded-lg hover:bg-zinc-800 group transition-colors cursor-pointer",
-                isCurrentlyPlaying(track) && "bg-zinc-800 text-green-500"
+                "grid grid-cols-12 gap-4 px-4 py-2 rounded-lg hover:bg-neon-purple/10 hover:shadow-glow-purple/30 group transition-all duration-300 cursor-pointer",
+                isCurrentlyPlaying(track) && "bg-neon-purple/20 text-neon-purple shadow-glow-purple/50"
               )}
               onClick={() => playTrack(track)}
             >
-              <div className="col-span-1 flex items-center text-zinc-400 group-hover:hidden">
+              <div className="col-span-1 flex items-center text-muted-foreground group-hover:hidden">
                 {isCurrentlyPlaying(track) ? (
                   <div className="h-4 w-4 flex items-center justify-center">
-                    <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className="w-1 h-1 bg-neon-purple rounded-full animate-pulse"></div>
                   </div>
                 ) : (
                   index + 1
@@ -196,38 +202,43 @@ const LikedSongsPage = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-white hover:bg-transparent"
+                  className="h-8 w-8 p-0 text-foreground hover:bg-transparent hover:text-neon-purple hover:scale-110 transition-all duration-300"
                   onClick={(e) => {
                     e.stopPropagation();
                     playTrack(track);
                   }}
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-4 w-4 fill-current" />
                 </Button>
               </div>
 
               <div className="col-span-6 flex items-center gap-3 min-w-0">
-                <img
-                  src={track.image}
-                  alt={track.name}
-                  className="h-10 w-10 rounded"
-                />
+                <div className="relative">
+                  <img
+                    src={track.image}
+                    alt={track.name}
+                    className="h-10 w-10 rounded-md border border-neon-purple/30"
+                  />
+                  <div className="absolute inset-0 rounded-md border border-transparent bg-gradient-to-br from-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
                 <div className="min-w-0">
                   <p className={cn(
-                    "font-medium truncate",
-                    isCurrentlyPlaying(track) ? "text-green-500" : "text-white"
+                    "font-medium truncate transition-colors duration-300",
+                    isCurrentlyPlaying(track) ? "text-neon-purple" : "text-foreground group-hover:text-neon-purple"
                   )}>
                     {track.name}
                   </p>
-                  <p className="text-sm text-zinc-400 truncate">{track.artist_name}</p>
+                  <p className="text-sm text-muted-foreground truncate group-hover:text-neon-cyan transition-colors duration-300">
+                    {track.artist_name}
+                  </p>
                 </div>
               </div>
 
-              <div className="col-span-3 flex items-center text-zinc-400 truncate">
+              <div className="col-span-3 flex items-center text-muted-foreground truncate group-hover:text-neon-cyan transition-colors duration-300">
                 {track.album_name}
               </div>
 
-              <div className="col-span-1 flex items-center text-zinc-400 text-sm">
+              <div className="col-span-1 flex items-center text-muted-foreground text-sm group-hover:text-neon-cyan transition-colors duration-300">
                 {new Date(track.releasedate).toLocaleDateString('es-ES', {
                   day: '2-digit',
                   month: '2-digit',
@@ -236,35 +247,35 @@ const LikedSongsPage = () => {
               </div>
 
               <div className="col-span-1 flex items-center justify-between">
-                <span className="text-zinc-400 text-sm group-hover:hidden">
+                <span className="text-muted-foreground text-sm group-hover:hidden">
                   {formatDuration(track.duration)}
                 </span>
                 <div className="hidden group-hover:flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                    className="h-8 w-8 p-0 text-neon-pink hover:text-neon-pink/80 hover:scale-110 transition-all duration-300"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeFromLiked(track.id);
                     }}
                   >
-                    <Heart className="h-4 w-4 fill-current text-green-500" />
+                    <Heart className="h-4 w-4 fill-current" />
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-neon-purple hover:scale-110 transition-all duration-300"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-zinc-800 border-zinc-700">
+                    <DropdownMenuContent className="cyber-card border-neon backdrop-blur-glass">
                       <DropdownMenuItem 
-                        className="text-white hover:bg-zinc-700"
+                        className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300"
                         onClick={(e) => {
                           e.stopPropagation();
                           addToQueue(track);
@@ -273,7 +284,7 @@ const LikedSongsPage = () => {
                         Añadir a la cola
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        className="text-red-400 hover:bg-zinc-700"
+                        className="text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-300"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFromLiked(track.id);
