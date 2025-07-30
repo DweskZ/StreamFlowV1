@@ -1,151 +1,168 @@
 import { useState } from 'react';
-import { Search, Music, Zap, User } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
-  onSearch?: (query: string, genre?: string) => void;
+  readonly onSearch?: (query: string) => void;
 }
-
-const GENRES = [
-  { value: 'all', label: 'Todos los géneros' },
-  { value: 'rock', label: 'Rock' },
-  { value: 'pop', label: 'Pop' },
-  { value: 'electronic', label: 'Electronic' },
-  { value: 'jazz', label: 'Jazz' },
-  { value: 'classical', label: 'Classical' },
-  { value: 'folk', label: 'Folk' },
-  { value: 'hip-hop', label: 'Hip-Hop' },
-  { value: 'ambient', label: 'Ambient' },
-  { value: 'instrumental', label: 'Instrumental' },
-];
 
 export default function Header({ onSearch }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('all');
 
   const handleSearch = () => {
     if (!onSearch) return;
-    const genre = selectedGenre === 'all' ? '' : selectedGenre;
-    onSearch(searchQuery, genre);
+    onSearch(searchQuery);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
   };
 
+  const goBack = () => {
+    navigate(-1);
+  };
+
+  const goForward = () => {
+    navigate(1);
+  };
+
   return (
-    <header className="cyber-card border-purple-500/20 sticky top-0 z-50 backdrop-blur-xl">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
+    <header className={`fixed top-0 right-0 h-16 bg-cyber-gradient border-b border-neon backdrop-blur-glass z-40 ${user ? 'left-64' : 'left-0'} transition-all duration-300`}>
+      <div className="h-full px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
+        
+        {/* LEFT - Navigation buttons */}
+        <div className="flex items-center gap-2">
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            onClick={goBack}
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            onClick={goForward}
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* CENTER - Search bar */}
+        {onSearch && (
+          <div className="flex-1 max-w-md mx-8">
             <div className="relative">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-xl shadow-glow-purple">
-                <Music className="h-6 w-6 text-white" />
-              </div>
-              <div className="absolute inset-0 bg-purple-500/20 rounded-xl blur-lg" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="¿Qué quieres reproducir?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="pl-10 bg-black/30 border-neon-purple/30 text-foreground placeholder:text-muted-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all rounded-full"
+              />
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent animate-gradient">
-              StreamFlow
-            </h1>
           </div>
+        )}
 
-          {onSearch && (
-            <div className="flex items-center gap-3 flex-1 max-w-2xl">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 h-4 w-4" />
-                <Input
-                  placeholder="Buscar en las dimensiones sonoras..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="pl-10 bg-black/20 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
-                />
-              </div>
+        {/* RIGHT - Actions and user */}
+        <div className="flex items-center gap-3">
+          {/* Notification button */}
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300 relative"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-0 right-0 w-2 h-2 bg-neon-pink rounded-full animate-pulse"></span>
+          </Button>
 
-              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                <SelectTrigger className="w-48 bg-black/20 border-purple-500/30 text-white hover:border-purple-400 transition-colors">
-                  <SelectValue placeholder="Frecuencia" />
-                </SelectTrigger>
-                <SelectContent className="bg-black/90 border-purple-500/30 backdrop-blur-xl">
-                  {GENRES.map((genre) => (
-                    <SelectItem 
-                      key={genre.value} 
-                      value={genre.value}
-                      className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20"
+          {/* More options */}
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+
+          {/* User section */}
+          {user ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="flex items-center gap-2 rounded-full pl-2 pr-3 py-1 hover:bg-neon-purple/20 hover:shadow-glow-purple transition-all duration-300"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback className="bg-gradient-to-r from-neon-purple to-neon-pink text-white text-xs">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-foreground font-medium hidden md:block">
+                    {user.email?.split('@')[0]}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 cyber-card border-neon backdrop-blur-glass" side="bottom" align="end">
+                <div className="space-y-2">
+                  <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b border-neon-purple/20">
+                    Mi cuenta
+                  </div>
+                  <Link 
+                    to="/profile"
+                    className="flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-neon-purple/20 hover:text-neon-purple rounded transition-all duration-300"
+                  >
+                    <User className="w-4 h-4" />
+                    Perfil
+                  </Link>
+                  <button
+                    className="flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-neon-purple/20 hover:text-neon-purple rounded transition-all duration-300 w-full text-left"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Configuración
+                  </button>
+                  <div className="border-t border-neon-purple/20 pt-2">
+                    <button
+                      onClick={signOut}
+                      className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:bg-red-500/20 hover:text-red-400 rounded transition-all duration-300 w-full text-left"
                     >
-                      {genre.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <div className="flex items-center gap-2">
               <Button 
-                onClick={handleSearch} 
-                className="neon-button text-white font-semibold"
+                asChild 
+                variant="ghost" 
+                size="sm"
+                className="text-neon-cyan hover:text-neon-cyan/80 hover:bg-neon-cyan/10 transition-all duration-300"
               >
-                <Zap className="w-4 h-4 mr-2" />
-                Escanear
+                <Link to="/login">Iniciar sesión</Link>
+              </Button>
+              <Button 
+                asChild 
+                size="sm"
+                className="neon-button text-white font-medium"
+              >
+                <Link to="/login">Registrarse</Link>
               </Button>
             </div>
           )}
-
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400 hidden md:block">
-              <span className="bg-gradient-to-r from-purple-600/20 to-cyan-600/20 border border-purple-500/30 px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                Neural Audio ∞
-              </span>
-            </div>
-            {user ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                  <Link to="/profile" className="text-purple-300 hover:text-white transition-colors">
-                    {user.email?.split('@')[0]}
-                  </Link>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={signOut}
-                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:text-white transition-all"
-                >
-                  Desconectar
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Button 
-                  asChild 
-                  variant="outline" 
-                  size="sm"
-                  className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10 hover:shadow-glow-cyan transition-all"
-                >
-                  <Link to="/login">Conectar</Link>
-                </Button>
-                <Button 
-                  asChild 
-                  size="sm"
-                  className="neon-button text-white font-semibold"
-                >
-                  <Link to="/login">
-                    <Zap className="w-4 h-4 mr-2" />
-                    Registro Neural
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </header>

@@ -111,10 +111,10 @@ export default function FixedPlayerBar({
 
   if (!currentTrack) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-r from-black/98 via-gray-900/95 to-black/98 border-t border-purple-500/20 backdrop-blur-xl z-50">
+      <div className="fixed bottom-0 left-0 right-0 h-[90px] bg-cyber-gradient border-t border-neon backdrop-blur-glass z-50">
         <div className="flex items-center justify-center h-full">
-          <div className="flex items-center gap-3 text-gray-400">
-            <Monitor className="w-5 h-5 text-purple-400 animate-pulse" />
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Monitor className="w-5 h-5 text-neon-purple animate-pulse" />
             <span className="text-sm font-medium">Selecciona una canción para comenzar</span>
           </div>
         </div>
@@ -123,45 +123,55 @@ export default function FixedPlayerBar({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-r from-black/98 via-gray-900/95 to-black/98 border-t border-purple-500/20 backdrop-blur-xl z-50">
-      <div className="h-full px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 h-[90px] bg-cyber-gradient border-t border-neon backdrop-blur-glass z-50">
+      <div className="h-full px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
         
         {/* LEFT - Info de canción */}
-        <div className="flex items-center gap-4 w-80 min-w-0 pl-2">
+        <div className="flex items-center gap-4 w-[300px] min-w-0">
           <div className="relative flex-shrink-0 group">
             <img
               src={currentTrack.album_image || currentTrack.image || '/placeholder.svg'}
               alt={`${currentTrack.album_name} cover`}
-              className="w-14 h-14 rounded object-cover shadow-lg shadow-black/50"
+              className="w-12 h-12 rounded-xl object-cover shadow-lg border border-neon-purple/30"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/placeholder.svg';
               }}
             />
-            <div className="absolute inset-0 rounded bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Neon border effect */}
+            <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-gradient-to-br from-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="font-semibold text-white truncate text-sm hover:underline cursor-pointer leading-tight">
+            <h4 className="font-medium text-foreground truncate text-sm hover:text-neon-purple cursor-pointer transition-colors">
               {currentTrack.name}
             </h4>
-            <p className="text-sm text-gray-400 truncate hover:underline cursor-pointer mt-1">
+            <p className="text-xs text-muted-foreground truncate hover:text-neon-cyan cursor-pointer transition-colors">
               {currentTrack.artist_name}
             </p>
           </div>
           {isAuthenticated && (
-            <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" className={`h-8 w-8 rounded-full ${isLiked ? 'text-purple-400 hover:text-purple-300' : 'text-gray-400 hover:text-white'}`} onClick={handleLikeToggle}>
+            <div className="flex items-center gap-1">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className={`h-8 w-8 rounded-full transition-all duration-300 ${
+                  isLiked 
+                    ? 'text-neon-pink hover:text-neon-pink/80 shadow-glow-pink' 
+                    : 'text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple'
+                }`} 
+                onClick={handleLikeToggle}
+              >
                 <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
               </Button>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-gray-400 hover:text-white">
+                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-48 cyber-card border-purple-500/30 backdrop-blur-xl" side="top" align="start">
+                <PopoverContent className="w-48 cyber-card border-neon backdrop-blur-glass" side="top" align="start">
                   <div className="space-y-1">
-                    <div className="px-3 py-2 text-xs font-medium text-gray-400 border-b border-purple-500/20">Agregar a playlist</div>
+                    <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b border-neon-purple/20">Agregar a playlist</div>
                     {playlists.map((playlist) => (
                       <button
                         key={playlist.id}
@@ -169,9 +179,9 @@ export default function FixedPlayerBar({
                           const libraryTrack = convertToLibraryTrack(currentTrack);
                           addTrackToPlaylist(playlist.id, libraryTrack);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-white hover:bg-purple-500/20 rounded flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-neon-purple/20 hover:text-neon-purple rounded flex items-center gap-2 transition-all duration-300"
                       >
-                        <ListMusic className="w-4 h-4 text-purple-400" />
+                        <ListMusic className="w-4 h-4 text-neon-cyan" />
                         {playlist.name}
                       </button>
                     ))}
@@ -183,7 +193,7 @@ export default function FixedPlayerBar({
         </div>
 
         {/* CENTER - Controles */}
-        <div className="flex-1 mx-auto max-w-xl">
+        <div className="flex-1 max-w-[600px] mx-auto">
           <AudioPlayer
             ref={audioRef}
             src={isReady ? currentTrack.audio : ''}
@@ -196,23 +206,28 @@ export default function FixedPlayerBar({
             showJumpControls={false}
             showDownloadProgress={false}
             showFilledProgress
-            className="spotify-player"
+            className="modern-player"
           />
         </div>
 
         {/* RIGHT - Volumen y lista */}
-        <div className="flex items-center gap-2 w-80 justify-end pr-2">
-          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-gray-400 hover:text-white">
+        <div className="flex items-center gap-3 w-[300px] justify-end">
+          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300">
             <ListMusic className="h-4 w-4" />
           </Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-gray-400 hover:text-white">
+          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-blue hover:shadow-glow-blue transition-all duration-300">
             <Monitor className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-1 min-w-32">
-            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-gray-400 hover:text-white" onClick={toggleMute}>
+          <div className="flex items-center gap-2 min-w-[120px]">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300" 
+              onClick={toggleMute}
+            >
               <VolumeIcon className="h-4 w-4" />
             </Button>
-            <div className="w-24 group">
+            <div className="w-20 group">
               <input
                 type="range"
                 min="0"
@@ -220,7 +235,7 @@ export default function FixedPlayerBar({
                 step="0.01"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                className="w-full h-1 bg-muted rounded-full appearance-none cursor-pointer cyber-volume-slider"
               />
             </div>
           </div>
@@ -229,7 +244,7 @@ export default function FixedPlayerBar({
 
       {/* Estilos personalizados */}
       <style>{`
-        .spotify-player .rhap_container {
+        .modern-player .rhap_container {
           background-color: transparent !important;
           padding: 0 !important;
           display: flex !important;
@@ -239,83 +254,150 @@ export default function FixedPlayerBar({
           gap: 8px !important;
         }
 
-        .spotify-player .rhap_main-controls {
+        .modern-player .rhap_main-controls {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          gap: 16px !important;
-          height: 40px !important;
-          margin-bottom: 0 !important;
+          gap: 12px !important;
+          height: 32px !important;
+          margin-bottom: 8px !important;
         }
 
-        .spotify-player .rhap_play-pause-button {
+        .modern-player .rhap_button-clear {
           width: 32px !important;
           height: 32px !important;
-          background: white !important;
-          border-radius: 9999px !important;
+          color: hsl(var(--muted-foreground)) !important;
+          background: none !important;
+          border: none !important;
+          border-radius: 50% !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
+          transition: all 0.3s ease !important;
         }
 
-        .spotify-player .rhap_play-pause-button svg {
+        .modern-player .rhap_button-clear:hover {
+          color: hsl(var(--neon-purple)) !important;
+          transform: scale(1.1) !important;
+          filter: drop-shadow(0 0 8px hsl(var(--neon-purple) / 0.5)) !important;
+        }
+
+        .modern-player .rhap_play-pause-button {
+          width: 36px !important;
+          height: 36px !important;
+          background: linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink))) !important;
+          border-radius: 50% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          transition: all 0.3s ease !important;
+          box-shadow: 0 0 20px hsl(var(--neon-purple) / 0.5) !important;
+        }
+
+        .modern-player .rhap_play-pause-button:hover {
+          transform: scale(1.1) !important;
+          box-shadow: 0 0 30px hsl(var(--neon-purple) / 0.7) !important;
+        }
+
+        .modern-player .rhap_play-pause-button svg {
           width: 16px !important;
           height: 16px !important;
-          fill: black !important;
+          fill: white !important;
         }
 
-        .spotify-player .rhap_progress-section {
+        .modern-player .rhap_progress-section {
           width: 100% !important;
           display: flex !important;
           justify-content: center !important;
           align-items: center !important;
-          gap: 8px !important;
-          margin-top: 4px !important;
+          gap: 12px !important;
+          margin-top: 0 !important;
         }
 
-        .spotify-player .rhap_progress-container {
-          background-color: #4b5563 !important;
+        .modern-player .rhap_time {
+          color: hsl(var(--muted-foreground)) !important;
+          font-size: 11px !important;
+          font-weight: 400 !important;
+          min-width: 40px !important;
+          text-align: center !important;
+        }
+
+        .modern-player .rhap_progress-container {
+          background-color: hsl(var(--muted)) !important;
           height: 4px !important;
           border-radius: 2px !important;
           flex: 1 !important;
+          cursor: pointer !important;
+          position: relative !important;
         }
 
-        .spotify-player .rhap_progress-filled {
-          background-color: #1db954 !important;
+        .modern-player .rhap_progress-container:hover .rhap_progress-filled {
+          background: linear-gradient(90deg, hsl(var(--neon-purple)), hsl(var(--neon-pink))) !important;
+          box-shadow: 0 0 10px hsl(var(--neon-purple) / 0.5) !important;
         }
 
-        .spotify-player .rhap_volume-controls {
+        .modern-player .rhap_progress-filled {
+          background: linear-gradient(90deg, hsl(var(--neon-purple)), hsl(var(--neon-cyan))) !important;
+          border-radius: 2px !important;
+          transition: all 0.3s ease !important;
+        }
+
+        .modern-player .rhap_progress-indicator {
+          width: 12px !important;
+          height: 12px !important;
+          background: hsl(var(--foreground)) !important;
+          border-radius: 50% !important;
+          opacity: 0 !important;
+          transition: opacity 0.2s ease !important;
+          box-shadow: 0 0 8px hsl(var(--neon-purple) / 0.5) !important;
+        }
+
+        .modern-player .rhap_progress-container:hover .rhap_progress-indicator {
+          opacity: 1 !important;
+        }
+
+        .modern-player .rhap_volume-controls {
           display: none !important;
         }
 
-        .slider {
-          background: linear-gradient(to right, #1db954 0%, #1db954 ${(isMuted ? 0 : volume) * 100}%, #4b5563 ${(isMuted ? 0 : volume) * 100}%, #4b5563 100%);
+        .cyber-volume-slider {
+          background: linear-gradient(to right, 
+            hsl(var(--neon-purple)) 0%, 
+            hsl(var(--neon-purple)) ${(isMuted ? 0 : volume) * 100}%, 
+            hsl(var(--muted)) ${(isMuted ? 0 : volume) * 100}%, 
+            hsl(var(--muted)) 100%);
+          transition: all 0.3s ease;
         }
 
-        .slider::-webkit-slider-thumb {
+        .cyber-volume-slider::-webkit-slider-thumb {
           appearance: none;
           height: 12px;
           width: 12px;
-          background: white;
-          border-radius: 9999px;
+          background: hsl(var(--foreground));
+          border-radius: 50%;
           cursor: pointer;
           opacity: 0;
+          transition: all 0.2s ease;
+          box-shadow: 0 0 8px hsl(var(--neon-purple) / 0.5);
         }
 
-        .group:hover .slider::-webkit-slider-thumb {
+        .group:hover .cyber-volume-slider::-webkit-slider-thumb {
           opacity: 1;
         }
 
-        .slider::-moz-range-thumb {
+        .cyber-volume-slider::-moz-range-thumb {
           height: 12px;
           width: 12px;
-          background: white;
-          border-radius: 9999px;
+          background: hsl(var(--foreground));
+          border: none;
+          border-radius: 50%;
           cursor: pointer;
           opacity: 0;
+          transition: all 0.2s ease;
+          box-shadow: 0 0 8px hsl(var(--neon-purple) / 0.5);
         }
 
-        .group:hover .slider::-moz-range-thumb {
+        .group:hover .cyber-volume-slider::-moz-range-thumb {
           opacity: 1;
         }
       `}</style>
