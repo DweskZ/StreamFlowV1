@@ -31,6 +31,10 @@ const ProtectedLayout = () => {
   return <MainLayout />;
 };
 
+const PublicLayout = () => {
+  return <MainLayout />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -41,9 +45,11 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Home />} />
+                </Route>
                 <Route element={<ProtectedLayout />}>
                   <Route path="/app" element={<Dashboard />} />
                   <Route path="/app/search" element={<SearchPage />} />

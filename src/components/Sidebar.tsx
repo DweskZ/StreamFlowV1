@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useLibrary } from '@/contexts/LibraryContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -33,9 +34,15 @@ import { Textarea } from '@/components/ui/textarea';
 const Sidebar = () => {
   const location = useLocation();
   const { playlists, createPlaylist } = useLibrary();
+  const { user } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
+
+  // Don't render sidebar for non-authenticated users
+  if (!user) {
+    return null;
+  }
 
   const isActive = (path: string) => location.pathname === path;
 

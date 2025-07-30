@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import Header from '@/components/Header';
 import TrackCard from '@/components/TrackCard';
-import MusicPlayer from '@/components/AudioPlayer';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,7 +9,7 @@ import useTrendingSongs from '@/hooks/useTrendingSongs';
 
 export default function Home() {
   const { tracks, loading, error, search } = useTrendingSongs();
-  const { currentTrack, playTrack, addToQueue, nextTrack, prevTrack } = usePlayer();
+  const { currentTrack, playTrack, addToQueue } = usePlayer();
 
   const handleSearch = useCallback((query: string) => {
     if (query.trim()) {
@@ -200,12 +199,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      <MusicPlayer 
-        currentTrack={currentTrack} 
-        onEnded={nextTrack} 
-        onPrevious={prevTrack}
-      />
     </div>
   );
 }
