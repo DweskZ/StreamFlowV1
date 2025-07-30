@@ -41,6 +41,18 @@ export interface Track {
   };
 }
 
+export interface Album {
+  id: string;
+  name: string;
+  artist_id: string;
+  artist_name: string;
+  image: string;
+  releasedate: string;
+  tracks: Track[];
+  totalTracks: number;
+  duration: string;
+}
+
 export interface ApiResponse {
   headers: {
     status: string;

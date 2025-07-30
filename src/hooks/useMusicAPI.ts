@@ -1,7 +1,7 @@
 // hooks/useMusicAPI.ts
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Track, ApiResponse } from '@/types/music';
+import { Track, Album, ApiResponse } from '@/types/music';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -60,4 +60,47 @@ export const searchTracks = async (query: string): Promise<Track[]> => {
     return response.data.results;
   }
   throw new Error('Error al buscar canciones');
+};
+
+export const getAlbumsFromTracks = (tracks: Track[]): Album[] => {
+  const albumMap = new Map<string, Album>();
+
+  tracks.forEach(track => {
+    if (!albumMap.has(track.album_id)) {
+      const albumTracks = tracks.filter(t => t.album_id === track.album_id);
+      const sortedTracks = [...albumTracks].sort((a, b) => a.position - b.position);
+      const totalDuration = albumTracks.reduce((total, t) => total + (parseInt(t.duration) || 0), 0);
+      
+      albumMap.set(track.album_id, {
+        id: track.album_id,
+        name: track.album_name,
+        artist_id: track.artist_id,
+        artist_name: track.artist_name,
+        image: track.album_image || track.image,
+        releasedate: track.releasedate,
+        tracks: sortedTracks,
+        totalTracks: albumTracks.length,
+        duration: formatDuration(totalDuration)
+      });
+    }
+  });
+
+  return Array.from(albumMap.values()).sort((a, b) => 
+    new Date(b.releasedate).getTime() - new Date(a.releasedate).getTime()
+  );
+};
+
+const formatDuration = (totalSeconds: number): string => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  
+  if (hours > 0) {
+    return `${hours} h ${minutes} min`;
+  }
+  return `${minutes} min`;
+};
+
+export const searchAlbums = async (query: string): Promise<Album[]> => {
+  const tracks = await searchTracks(query);
+  return getAlbumsFromTracks(tracks);
 };
