@@ -4,14 +4,12 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Check, Crown, Zap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PricingPage = () => {
   const navigate = useNavigate();
   const { availablePlans, currentPlan, upgradeToPlan } = useSubscription();
-  const [isAnnual, setIsAnnual] = useState(false);
 
   // Filtrar y organizar planes
   const freePlan = availablePlans.find(p => p.name === 'free');
@@ -20,7 +18,8 @@ const PricingPage = () => {
 
   const displayPlans = [
     freePlan,
-    isAnnual ? annualPlan : monthlyPlan
+    monthlyPlan,
+    annualPlan
   ].filter(Boolean);
 
   const handleUpgrade = async (planId: string) => {
@@ -70,7 +69,7 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-black p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
@@ -79,36 +78,10 @@ const PricingPage = () => {
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
             Desbloquea todo el potencial de StreamFlow con nuestros planes premium
           </p>
-          
-          {/* Toggle Annual/Monthly */}
-          <div className="flex items-center justify-center gap-4 mt-8">
-            <span className={cn(
-              "text-sm font-medium transition-colors",
-              !isAnnual ? "text-white" : "text-gray-400"
-            )}>
-              Mensual
-            </span>
-            <Switch
-              checked={isAnnual}
-              onCheckedChange={setIsAnnual}
-              className="data-[state=checked]:bg-purple-600"
-            />
-            <span className={cn(
-              "text-sm font-medium transition-colors",
-              isAnnual ? "text-white" : "text-gray-400"
-            )}>
-              Anual
-            </span>
-            {isAnnual && (
-              <Badge className="bg-green-600/20 text-green-400 border-green-600/30">
-                ¡Ahorra 17%!
-              </Badge>
-            )}
-          </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {displayPlans.map((plan) => {
             if (!plan) return null;
             
@@ -120,7 +93,7 @@ const PricingPage = () => {
               <Card 
                 key={plan.id} 
                 className={cn(
-                  "relative cyber-card border-2 transition-all duration-300 hover:shadow-glow-purple/50",
+                  "relative cyber-card border-2 transition-all duration-300 hover:shadow-glow-purple/50 flex flex-col",
                   isPopular && "border-purple-500/50 shadow-glow-purple/30",
                   isCurrent && "border-green-500/50 shadow-glow-green/30",
                   plan.name === 'free' && "border-gray-500/30"
@@ -178,9 +151,9 @@ const PricingPage = () => {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 flex-1 flex flex-col">
                   {/* Features List */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1">
                     {plan.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
@@ -196,7 +169,7 @@ const PricingPage = () => {
                     variant={getButtonVariant(plan)}
                     size="lg"
                     className={cn(
-                      "w-full text-base font-semibold transition-all duration-300",
+                      "w-full text-base font-semibold transition-all duration-300 mt-auto",
                       plan.name !== 'free' && !isCurrent && "neon-button hover:scale-105"
                     )}
                   >
