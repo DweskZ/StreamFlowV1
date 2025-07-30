@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Music } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Music, Sparkles, Headphones, Disc3, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PasswordStrength } from '@/components/ui/password-strength';
 
@@ -117,16 +117,22 @@ export default function Login() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative z-10 w-full max-w-md">
-          <Card className="backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900/20 to-black relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-2xl animate-pulse delay-500" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-md mx-4">
+          <Card className="backdrop-blur-xl bg-black/40 border-purple-500/30 shadow-2xl">
             <CardHeader className="text-center space-y-4">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Music className="w-8 h-8 text-white" />
+              <div className="mx-auto w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-glow-purple">
+                <Music className="w-10 h-10 text-white" />
               </div>
               <CardTitle className="text-2xl font-bold text-white">¿Olvidaste tu contraseña?</CardTitle>
-              <CardDescription className="text-gray-200">
+              <CardDescription className="text-gray-300">
                 Te enviaremos un enlace para restablecer tu contraseña
               </CardDescription>
             </CardHeader>
@@ -142,7 +148,7 @@ export default function Login() {
                       id="email"
                       type="email"
                       placeholder="tu@email.com"
-                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                      className="pl-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                       {...forgotPasswordForm.register('email')}
                     />
                   </div>
@@ -153,7 +159,7 @@ export default function Login() {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2.5"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-3 shadow-glow-purple transition-all duration-300 hover:scale-105"
                   disabled={loading}
                 >
                   {loading ? "Enviando..." : "Enviar enlace"}
@@ -162,7 +168,7 @@ export default function Login() {
 
               <Button
                 variant="ghost"
-                className="w-full text-gray-300 hover:text-white hover:bg-white/10"
+                className="w-full text-gray-300 hover:text-white hover:bg-purple-500/10 transition-all duration-300"
                 onClick={() => setShowForgotPassword(false)}
               >
                 Volver al inicio de sesión
@@ -175,39 +181,66 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-black/20" />
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900/20 to-black relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-2xl animate-pulse delay-500" />
+        
+        {/* Floating Music Icons */}
+        <div className="absolute top-20 left-20 animate-bounce delay-1000">
+          <Headphones className="w-8 h-8 text-purple-400/30" />
+        </div>
+        <div className="absolute top-32 right-32 animate-bounce delay-2000">
+          <Disc3 className="w-6 h-6 text-pink-400/30" />
+        </div>
+        <div className="absolute bottom-32 left-32 animate-bounce delay-3000">
+          <Radio className="w-7 h-7 text-cyan-400/30" />
+        </div>
+        <div className="absolute bottom-20 right-20 animate-bounce delay-1500">
+          <Music className="w-5 h-5 text-purple-400/30" />
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
+      <div className="relative z-10 w-full max-w-md mx-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-white hover:text-purple-200 transition-colors mb-4">
-            <Music className="w-8 h-8" />
-            <span className="text-2xl font-bold">StreamFlow</span>
+          <Link to="/" className="inline-flex items-center gap-3 text-white hover:text-purple-200 transition-all duration-300 mb-6 group">
+            <div className="relative">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-glow-purple group-hover:shadow-glow-pink transition-all duration-300">
+                <Music className="w-6 h-6 text-white" />
+              </div>
+              <Sparkles className="w-4 h-4 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
+            </div>
+            <span className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              StreamFlow
+            </span>
           </Link>
-          <h1 className="text-3xl font-bold text-white mb-2">¡Bienvenido!</h1>
-          <p className="text-gray-200">Descubre música sin límites</p>
+          <h1 className="text-4xl font-bold text-white mb-3">¡Bienvenido!</h1>
+          <p className="text-gray-300 text-lg">Descubre música sin límites</p>
         </div>
 
-        <Card className="backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
-              <User className="w-8 h-8 text-white" />
+        <Card className="backdrop-blur-xl bg-black/40 border-purple-500/30 shadow-2xl">
+          <CardHeader className="text-center pb-6">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-glow-purple mb-4">
+              <User className="w-10 h-10 text-white" />
             </div>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="px-8 pb-8">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20">
-                <TabsTrigger value="login" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+              <TabsList className="grid w-full grid-cols-2 bg-black/40 border-purple-500/30 mb-6">
+                <TabsTrigger 
+                  value="login" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-glow-purple transition-all duration-300"
+                >
                   Iniciar Sesión
                 </TabsTrigger>
-                <TabsTrigger value="register" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="register" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-glow-purple transition-all duration-300"
+                >
                   Registrarse
                 </TabsTrigger>
               </TabsList>
@@ -224,7 +257,7 @@ export default function Login() {
                         id="login-email"
                         type="email"
                         placeholder="tu@email.com"
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                        className="pl-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                         {...loginForm.register('email')}
                       />
                     </div>
@@ -243,14 +276,14 @@ export default function Login() {
                         id="login-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                        className="pl-10 pr-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                         {...loginForm.register('password')}
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white"
+                        className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -265,7 +298,7 @@ export default function Login() {
                     <Button
                       type="button"
                       variant="link"
-                      className="text-sm text-purple-300 hover:text-purple-100 p-0 h-auto"
+                      className="text-sm text-purple-300 hover:text-purple-100 p-0 h-auto transition-colors"
                       onClick={() => setShowForgotPassword(true)}
                     >
                       ¿Olvidaste tu contraseña?
@@ -274,7 +307,7 @@ export default function Login() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2.5"
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-3 shadow-glow-purple transition-all duration-300 hover:scale-105"
                     disabled={loading}
                   >
                     {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
@@ -283,10 +316,10 @@ export default function Login() {
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full bg-white/20" />
+                    <Separator className="w-full bg-purple-500/30" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-transparent px-2 text-gray-400">O continúa con</span>
+                    <span className="bg-black/40 px-4 text-gray-400">O continúa con</span>
                   </div>
                 </div>
 
@@ -294,7 +327,7 @@ export default function Login() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    className="bg-black/40 border-purple-500/30 text-white hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-300"
                     onClick={() => handleSocialLogin('google')}
                   >
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -308,7 +341,7 @@ export default function Login() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    className="bg-black/40 border-purple-500/30 text-white hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-300"
                     onClick={() => handleSocialLogin('github')}
                   >
                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -331,7 +364,7 @@ export default function Login() {
                         id="register-name"
                         type="text"
                         placeholder="Tu nombre"
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                        className="pl-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                         {...registerForm.register('name')}
                       />
                     </div>
@@ -350,7 +383,7 @@ export default function Login() {
                         id="register-email"
                         type="email"
                         placeholder="tu@email.com"
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                        className="pl-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                         {...registerForm.register('email')}
                       />
                     </div>
@@ -369,14 +402,14 @@ export default function Login() {
                         id="register-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                        className="pl-10 pr-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                         {...registerForm.register('password')}
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white"
+                        className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -398,14 +431,14 @@ export default function Login() {
                         id="register-confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-purple-400"
+                        className="pl-10 pr-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple transition-all"
                         {...registerForm.register('confirmPassword')}
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white"
+                        className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white transition-colors"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -418,7 +451,7 @@ export default function Login() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2.5"
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-3 shadow-glow-purple transition-all duration-300 hover:scale-105"
                     disabled={loading}
                   >
                     {loading ? "Creando cuenta..." : "Crear Cuenta"}
@@ -427,10 +460,10 @@ export default function Login() {
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full bg-white/20" />
+                    <Separator className="w-full bg-purple-500/30" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-transparent px-2 text-gray-400">O regístrate con</span>
+                    <span className="bg-black/40 px-4 text-gray-400">O regístrate con</span>
                   </div>
                 </div>
 
@@ -438,7 +471,7 @@ export default function Login() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    className="bg-black/40 border-purple-500/30 text-white hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-300"
                     onClick={() => handleSocialLogin('google')}
                   >
                     <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -452,7 +485,7 @@ export default function Login() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    className="bg-black/40 border-purple-500/30 text-white hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-300"
                     onClick={() => handleSocialLogin('github')}
                   >
                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -466,10 +499,12 @@ export default function Login() {
           </CardContent>
         </Card>
         
-        <div className="text-center mt-6">
+        <div className="text-center mt-8">
           <p className="text-gray-300 text-sm">
             ¿No tienes cuenta? Regístrate gratis y{' '}
-            <span className="text-purple-300 font-semibold">descubre música increíble</span>
+            <span className="text-purple-300 font-semibold hover:text-purple-200 transition-colors cursor-pointer">
+              descubre música increíble
+            </span>
           </p>
         </div>
       </div>
