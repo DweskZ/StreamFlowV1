@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { PlanBadge } from './subscription/PlanBadge';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,8 @@ import {
   PlaySquare,
   TrendingUp,
   Radio,
-  User
+  User,
+  X
 } from 'lucide-react';
 import {
   Dialog,
@@ -31,7 +33,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const location = useLocation();
   const { playlists, createPlaylist } = useLibrary();
   const { user } = useAuth();
@@ -91,14 +98,43 @@ const Sidebar = () => {
     }
   };
 
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="w-64 bg-black/90 backdrop-blur-sm border-r border-purple-500/20 text-white h-screen flex flex-col fixed left-0 top-0 z-50">
-      {/* Logo */}
-      <div className="p-6 flex-shrink-0">
+    <div className={cn(
+      "fixed top-0 left-0 h-screen z-50 bg-black/90 backdrop-blur-sm border-r border-purple-500/20 text-white flex flex-col transition-transform duration-300 ease-in-out",
+      "w-64 lg:translate-x-0",
+      isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+    )}>
+      {/* Mobile Close Button */}
+      <div className="flex items-center justify-between p-4 lg:hidden border-b border-purple-500/20">
+        <div className="flex items-center gap-2">
+          <Music className="h-6 w-6 text-purple-500" />
+          <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">StreamFlow</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="h-8 w-8 p-0 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Desktop Logo */}
+      <div className="p-6 flex-shrink-0 space-y-3 hidden lg:block">
         <div className="flex items-center gap-2">
           <Music className="h-8 w-8 text-purple-500" />
           <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">StreamFlow</span>
         </div>
+        {/* Plan Badge */}
+        <PlanBadge variant="outline" className="text-xs" clickable={true} />
       </div>
 
       <ScrollArea className="flex-1 px-3 overflow-y-auto">
@@ -110,6 +146,7 @@ const Sidebar = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleLinkClick}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                   item.active
@@ -206,6 +243,7 @@ const Sidebar = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleLinkClick}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                   item.active
@@ -227,6 +265,7 @@ const Sidebar = () => {
               <Link
                 key={playlist.id}
                 to={`/app/playlist/${playlist.id}`}
+                onClick={handleLinkClick}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                   isActive(`/app/playlist/${playlist.id}`)
@@ -253,6 +292,7 @@ const Sidebar = () => {
       <div className="p-3 border-t border-purple-500/20 flex-shrink-0">
         <Link
           to="/profile"
+          onClick={handleLinkClick}
           className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-purple-500/10 transition-all duration-200"
         >
           <div className="h-8 w-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-glow-purple/30">
