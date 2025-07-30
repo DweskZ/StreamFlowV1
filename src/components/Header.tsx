@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings, Crown } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings, Crown, Menu } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,9 +10,11 @@ import { Link, useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   readonly onSearch?: (query: string) => void;
+  readonly onToggleSidebar?: () => void;
+  readonly isSidebarOpen?: boolean;
 }
 
-export default function Header({ onSearch }: HeaderProps) {
+export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { isPremium } = usePlanInfo();
   const navigate = useNavigate();
@@ -38,32 +40,47 @@ export default function Header({ onSearch }: HeaderProps) {
   };
 
   return (
-    <header className={`fixed top-0 right-0 h-16 bg-cyber-gradient border-b border-neon backdrop-blur-glass z-40 ${user ? 'left-64' : 'left-0'} transition-all duration-300`}>
-      <div className="h-full px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
+    <header className={`fixed top-0 right-0 h-16 bg-cyber-gradient border-b border-neon backdrop-blur-glass z-40 transition-all duration-300 ${user ? 'lg:left-64 left-0' : 'left-0'}`}>
+      <div className="h-full px-4 lg:px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
         
-        {/* LEFT - Navigation buttons */}
+        {/* LEFT - Mobile menu button and Navigation buttons */}
         <div className="flex items-center gap-2">
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            onClick={goBack}
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            onClick={goForward}
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {/* Mobile Menu Button */}
+          {user && onToggleSidebar && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={onToggleSidebar}
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300 lg:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* Navigation buttons - hidden on mobile when sidebar is open */}
+          <div className={`flex items-center gap-2 ${user && isSidebarOpen ? 'hidden' : ''}`}>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={goBack}
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={goForward}
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* CENTER - Search bar */}
         {onSearch && (
-          <div className="flex-1 max-w-md mx-8">
+          <div className="flex-1 max-w-md mx-4 lg:mx-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -78,22 +95,22 @@ export default function Header({ onSearch }: HeaderProps) {
         )}
 
         {/* RIGHT - Actions and user */}
-        <div className="flex items-center gap-3">
-          {/* Notification button */}
+        <div className="flex items-center gap-2 lg:gap-3">
+          {/* Notification button - hidden on mobile */}
           <Button 
             size="icon" 
             variant="ghost" 
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300 relative"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300 relative hidden sm:flex"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-0 right-0 w-2 h-2 bg-neon-pink rounded-full animate-pulse"></span>
           </Button>
 
-          {/* More options */}
+          {/* More options - hidden on mobile */}
           <Button 
             size="icon" 
             variant="ghost" 
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300 hidden sm:flex"
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -112,7 +129,7 @@ export default function Header({ onSearch }: HeaderProps) {
                       {user.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm text-foreground font-medium hidden md:block">
+                  <span className="text-sm text-foreground font-medium hidden lg:block">
                     {user.email?.split('@')[0]}
                   </span>
                 </Button>
@@ -161,7 +178,7 @@ export default function Header({ onSearch }: HeaderProps) {
                 asChild 
                 variant="ghost" 
                 size="sm"
-                className="text-neon-cyan hover:text-neon-cyan/80 hover:bg-neon-cyan/10 transition-all duration-300"
+                className="text-neon-cyan hover:text-neon-cyan/80 hover:bg-neon-cyan/10 transition-all duration-300 hidden sm:flex"
               >
                 <Link to="/login">Iniciar sesión</Link>
               </Button>

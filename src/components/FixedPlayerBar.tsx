@@ -115,7 +115,8 @@ export default function FixedPlayerBar({
         <div className="flex items-center justify-center h-full">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Monitor className="w-5 h-5 text-neon-purple animate-pulse" />
-            <span className="text-sm font-medium">Selecciona una canción para comenzar</span>
+            <span className="text-sm font-medium hidden sm:block">Selecciona una canción para comenzar</span>
+            <span className="text-sm font-medium sm:hidden">Selecciona una canción</span>
           </div>
         </div>
       </div>
@@ -124,15 +125,15 @@ export default function FixedPlayerBar({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-[90px] bg-cyber-gradient border-t border-neon backdrop-blur-glass z-50">
-      <div className="h-full px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
+      <div className="h-full px-3 sm:px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
         
         {/* LEFT - Info de canción */}
-        <div className="flex items-center gap-4 w-[300px] min-w-0">
+        <div className="flex items-center gap-2 sm:gap-4 w-[200px] sm:w-[300px] min-w-0">
           <div className="relative flex-shrink-0 group">
             <img
               src={currentTrack.album_image || currentTrack.image || '/placeholder.svg'}
               alt={`${currentTrack.album_name} cover`}
-              className="w-12 h-12 rounded-xl object-cover shadow-lg border border-neon-purple/30"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover shadow-lg border border-neon-purple/30"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/placeholder.svg';
@@ -142,7 +143,7 @@ export default function FixedPlayerBar({
             <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-gradient-to-br from-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="font-medium text-foreground truncate text-sm hover:text-neon-purple cursor-pointer transition-colors">
+            <h4 className="font-medium text-foreground truncate text-xs sm:text-sm hover:text-neon-purple cursor-pointer transition-colors">
               {currentTrack.name}
             </h4>
             <p className="text-xs text-muted-foreground truncate hover:text-neon-cyan cursor-pointer transition-colors">
@@ -154,19 +155,19 @@ export default function FixedPlayerBar({
               <Button 
                 size="icon" 
                 variant="ghost" 
-                className={`h-8 w-8 rounded-full transition-all duration-300 ${
+                className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-300 ${
                   isLiked 
                     ? 'text-neon-pink hover:text-neon-pink/80 shadow-glow-pink' 
                     : 'text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple'
                 }`} 
                 onClick={handleLikeToggle}
               >
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${isLiked ? 'fill-current' : ''}`} />
               </Button>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button size="icon" variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300 hidden sm:flex">
+                    <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 cyber-card border-neon backdrop-blur-glass" side="top" align="start">
@@ -193,7 +194,7 @@ export default function FixedPlayerBar({
         </div>
 
         {/* CENTER - Controles */}
-        <div className="flex-1 max-w-[600px] mx-auto">
+        <div className="flex-1 max-w-[400px] sm:max-w-[600px] mx-auto">
           <AudioPlayer
             ref={audioRef}
             src={isReady ? currentTrack.audio : ''}
@@ -211,23 +212,23 @@ export default function FixedPlayerBar({
         </div>
 
         {/* RIGHT - Volumen y lista */}
-        <div className="flex items-center gap-3 w-[300px] justify-end">
-          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300">
-            <ListMusic className="h-4 w-4" />
+        <div className="flex items-center gap-2 sm:gap-3 w-[150px] sm:w-[300px] justify-end">
+          <Button size="icon" variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300 hidden sm:flex">
+            <ListMusic className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-blue hover:shadow-glow-blue transition-all duration-300">
-            <Monitor className="h-4 w-4" />
+          <Button size="icon" variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-muted-foreground hover:text-neon-blue hover:shadow-glow-blue transition-all duration-300 hidden sm:flex">
+            <Monitor className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
-          <div className="flex items-center gap-2 min-w-[120px]">
+          <div className="flex items-center gap-2 min-w-[80px] sm:min-w-[120px]">
             <Button 
               size="icon" 
               variant="ghost" 
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300" 
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300" 
               onClick={toggleMute}
             >
-              <VolumeIcon className="h-4 w-4" />
+              <VolumeIcon className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
-            <div className="w-20 group">
+            <div className="w-12 sm:w-20 group">
               <input
                 type="range"
                 min="0"
@@ -251,21 +252,29 @@ export default function FixedPlayerBar({
           align-items: center !important;
           justify-content: center !important;
           flex-direction: column !important;
-          gap: 8px !important;
+          gap: 6px !important;
         }
 
         .modern-player .rhap_main-controls {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          gap: 12px !important;
-          height: 32px !important;
-          margin-bottom: 8px !important;
+          gap: 8px !important;
+          height: 28px !important;
+          margin-bottom: 6px !important;
+        }
+
+        @media (min-width: 640px) {
+          .modern-player .rhap_main-controls {
+            gap: 12px !important;
+            height: 32px !important;
+            margin-bottom: 8px !important;
+          }
         }
 
         .modern-player .rhap_button-clear {
-          width: 32px !important;
-          height: 32px !important;
+          width: 28px !important;
+          height: 28px !important;
           color: hsl(var(--muted-foreground)) !important;
           background: none !important;
           border: none !important;
@@ -276,6 +285,13 @@ export default function FixedPlayerBar({
           transition: all 0.3s ease !important;
         }
 
+        @media (min-width: 640px) {
+          .modern-player .rhap_button-clear {
+            width: 32px !important;
+            height: 32px !important;
+          }
+        }
+
         .modern-player .rhap_button-clear:hover {
           color: hsl(var(--neon-purple)) !important;
           transform: scale(1.1) !important;
@@ -283,8 +299,8 @@ export default function FixedPlayerBar({
         }
 
         .modern-player .rhap_play-pause-button {
-          width: 36px !important;
-          height: 36px !important;
+          width: 32px !important;
+          height: 32px !important;
           background: linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink))) !important;
           border-radius: 50% !important;
           display: flex !important;
@@ -294,15 +310,29 @@ export default function FixedPlayerBar({
           box-shadow: 0 0 20px hsl(var(--neon-purple) / 0.5) !important;
         }
 
+        @media (min-width: 640px) {
+          .modern-player .rhap_play-pause-button {
+            width: 36px !important;
+            height: 36px !important;
+          }
+        }
+
         .modern-player .rhap_play-pause-button:hover {
           transform: scale(1.1) !important;
           box-shadow: 0 0 30px hsl(var(--neon-purple) / 0.7) !important;
         }
 
         .modern-player .rhap_play-pause-button svg {
-          width: 16px !important;
-          height: 16px !important;
+          width: 14px !important;
+          height: 14px !important;
           fill: white !important;
+        }
+
+        @media (min-width: 640px) {
+          .modern-player .rhap_play-pause-button svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
         }
 
         .modern-player .rhap_progress-section {
@@ -310,25 +340,44 @@ export default function FixedPlayerBar({
           display: flex !important;
           justify-content: center !important;
           align-items: center !important;
-          gap: 12px !important;
+          gap: 8px !important;
           margin-top: 0 !important;
+        }
+
+        @media (min-width: 640px) {
+          .modern-player .rhap_progress-section {
+            gap: 12px !important;
+          }
         }
 
         .modern-player .rhap_time {
           color: hsl(var(--muted-foreground)) !important;
-          font-size: 11px !important;
+          font-size: 10px !important;
           font-weight: 400 !important;
-          min-width: 40px !important;
+          min-width: 35px !important;
           text-align: center !important;
+        }
+
+        @media (min-width: 640px) {
+          .modern-player .rhap_time {
+            font-size: 11px !important;
+            min-width: 40px !important;
+          }
         }
 
         .modern-player .rhap_progress-container {
           background-color: hsl(var(--muted)) !important;
-          height: 4px !important;
+          height: 3px !important;
           border-radius: 2px !important;
           flex: 1 !important;
           cursor: pointer !important;
           position: relative !important;
+        }
+
+        @media (min-width: 640px) {
+          .modern-player .rhap_progress-container {
+            height: 4px !important;
+          }
         }
 
         .modern-player .rhap_progress-container:hover .rhap_progress-filled {
@@ -343,13 +392,20 @@ export default function FixedPlayerBar({
         }
 
         .modern-player .rhap_progress-indicator {
-          width: 12px !important;
-          height: 12px !important;
+          width: 10px !important;
+          height: 10px !important;
           background: hsl(var(--foreground)) !important;
           border-radius: 50% !important;
           opacity: 0 !important;
           transition: opacity 0.2s ease !important;
           box-shadow: 0 0 8px hsl(var(--neon-purple) / 0.5) !important;
+        }
+
+        @media (min-width: 640px) {
+          .modern-player .rhap_progress-indicator {
+            width: 12px !important;
+            height: 12px !important;
+          }
         }
 
         .modern-player .rhap_progress-container:hover .rhap_progress-indicator {
@@ -371,14 +427,21 @@ export default function FixedPlayerBar({
 
         .cyber-volume-slider::-webkit-slider-thumb {
           appearance: none;
-          height: 12px;
-          width: 12px;
+          height: 10px;
+          width: 10px;
           background: hsl(var(--foreground));
           border-radius: 50%;
           cursor: pointer;
           opacity: 0;
           transition: all 0.2s ease;
           box-shadow: 0 0 8px hsl(var(--neon-purple) / 0.5);
+        }
+
+        @media (min-width: 640px) {
+          .cyber-volume-slider::-webkit-slider-thumb {
+            height: 12px;
+            width: 12px;
+          }
         }
 
         .group:hover .cyber-volume-slider::-webkit-slider-thumb {
@@ -386,8 +449,8 @@ export default function FixedPlayerBar({
         }
 
         .cyber-volume-slider::-moz-range-thumb {
-          height: 12px;
-          width: 12px;
+          height: 10px;
+          width: 10px;
           background: hsl(var(--foreground));
           border: none;
           border-radius: 50%;
@@ -395,6 +458,13 @@ export default function FixedPlayerBar({
           opacity: 0;
           transition: all 0.2s ease;
           box-shadow: 0 0 8px hsl(var(--neon-purple) / 0.5);
+        }
+
+        @media (min-width: 640px) {
+          .cyber-volume-slider::-moz-range-thumb {
+            height: 12px;
+            width: 12px;
+          }
         }
 
         .group:hover .cyber-volume-slider::-moz-range-thumb {

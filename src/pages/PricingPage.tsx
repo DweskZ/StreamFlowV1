@@ -68,20 +68,20 @@ const PricingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-black p-6">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-black p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12 space-y-4">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+        <div className="text-center mb-8 sm:mb-12 space-y-4">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
             Elige tu Plan
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto px-4">
             Desbloquea todo el potencial de StreamFlow con nuestros planes premium
           </p>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {displayPlans.map((plan) => {
             if (!plan) return null;
             
@@ -101,63 +101,63 @@ const PricingPage = () => {
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1">
+                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 sm:px-4 py-1 text-xs sm:text-sm">
                       Más Popular
                     </Badge>
                   </div>
                 )}
                 
                 {isCurrent && (
-                  <div className="absolute -top-3 right-4">
-                    <Badge className="bg-green-600/20 text-green-400 border-green-600/30">
+                  <div className="absolute -top-3 right-3 sm:right-4">
+                    <Badge className="bg-green-600/20 text-green-400 border-green-600/30 text-xs sm:text-sm">
                       Plan Actual
                     </Badge>
                   </div>
                 )}
 
-                <CardHeader className="text-center space-y-4">
+                <CardHeader className="text-center space-y-4 p-4 sm:p-6">
                   <div className={cn(
-                    "w-16 h-16 mx-auto rounded-full flex items-center justify-center",
+                    "w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-full flex items-center justify-center",
                     plan.name === 'free' 
                       ? "bg-gray-500/20 text-gray-400" 
                       : "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                   )}>
-                    <Icon className="w-8 h-8" />
+                    <Icon className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
                   
                   <div>
-                    <CardTitle className="text-2xl text-white">
+                    <CardTitle className="text-xl sm:text-2xl text-white">
                       {plan.display_name}
                     </CardTitle>
-                    <CardDescription className="text-gray-400 mt-2">
+                    <CardDescription className="text-gray-400 mt-2 text-sm sm:text-base">
                       {plan.description}
                     </CardDescription>
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-4xl font-bold text-white">
+                    <div className="text-3xl sm:text-4xl font-bold text-white">
                       ${plan.price}
                       {plan.price > 0 && (
-                        <span className="text-lg text-gray-400 font-normal">
+                        <span className="text-base sm:text-lg text-gray-400 font-normal">
                           /{plan.interval_type === 'month' ? 'mes' : 'año'}
                         </span>
                       )}
                     </div>
                     {plan.name === 'premium_annual' && (
-                      <div className="text-sm text-green-400">
+                      <div className="text-xs sm:text-sm text-green-400">
                         Equivale a $8.33/mes
                       </div>
                     )}
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-6 flex-1 flex flex-col">
+                <CardContent className="space-y-6 flex-1 flex flex-col p-4 sm:p-6">
                   {/* Features List */}
                   <div className="space-y-3 flex-1">
                     {plan.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-300 text-sm">{feature}</span>
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-300 text-xs sm:text-sm">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -169,7 +169,7 @@ const PricingPage = () => {
                     variant={getButtonVariant(plan)}
                     size="lg"
                     className={cn(
-                      "w-full text-base font-semibold transition-all duration-300 mt-auto",
+                      "w-full text-sm sm:text-base font-semibold transition-all duration-300 mt-auto",
                       plan.name !== 'free' && !isCurrent && "neon-button hover:scale-105"
                     )}
                   >
@@ -182,11 +182,11 @@ const PricingPage = () => {
         </div>
 
         {/* Additional Info */}
-        <div className="text-center mt-12 space-y-4">
-          <p className="text-gray-400">
+        <div className="text-center mt-8 sm:mt-12 space-y-4">
+          <p className="text-gray-400 text-sm sm:text-base">
             ¿Tienes preguntas? <a href="#" className="text-purple-400 hover:text-purple-300">Contáctanos</a>
           </p>
-          <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
             <span>✓ Cancela en cualquier momento</span>
             <span>✓ Soporte 24/7</span>
             <span>✓ Garantía de 30 días</span>
@@ -194,7 +194,7 @@ const PricingPage = () => {
         </div>
 
         {/* Back Button */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-6 sm:mt-8">
           <Button 
             variant="ghost" 
             onClick={() => navigate(-1)}
