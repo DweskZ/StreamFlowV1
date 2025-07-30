@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { PlanBadge } from './subscription/PlanBadge';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -94,11 +95,13 @@ const Sidebar = () => {
   return (
     <div className="w-64 bg-black/90 backdrop-blur-sm border-r border-purple-500/20 text-white h-screen flex flex-col fixed left-0 top-0 z-50">
       {/* Logo */}
-      <div className="p-6 flex-shrink-0">
+      <div className="p-6 flex-shrink-0 space-y-3">
         <div className="flex items-center gap-2">
           <Music className="h-8 w-8 text-purple-500" />
           <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">StreamFlow</span>
         </div>
+        {/* Plan Badge */}
+        <PlanBadge variant="outline" className="text-xs" clickable={true} />
       </div>
 
       <ScrollArea className="flex-1 px-3 overflow-y-auto">

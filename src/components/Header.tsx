@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings, Crown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlanInfo } from '@/hooks/useSubscription';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export default function Header({ onSearch }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const { isPremium } = usePlanInfo();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -127,6 +129,15 @@ export default function Header({ onSearch }: HeaderProps) {
                     <User className="w-4 h-4" />
                     Perfil
                   </Link>
+                  {!isPremium && (
+                    <Link
+                      to="/app/pricing"
+                      className="flex items-center gap-3 px-3 py-2 text-sm text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300 rounded transition-all duration-300"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Actualizar Plan
+                    </Link>
+                  )}
                   <button
                     className="flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-neon-purple/20 hover:text-neon-purple rounded transition-all duration-300 w-full text-left"
                   >
