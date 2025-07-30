@@ -20,9 +20,12 @@ import {
   Piano, 
   Drum,
   TrendingUp,
-  Disc3
+  Disc3,
+  Clock,
+  X
 } from 'lucide-react';
 import { useLibrary } from '@/contexts/LibraryContext';
+import { cn } from '@/lib/utils';
 
 const musicGenres = [
   { name: 'Pop', color: 'bg-pink-600', icon: Mic2 },
@@ -99,35 +102,20 @@ const SearchPage = () => {
       }
 
       if (trackResults.length === 0 && albumSearchResults.length === 0) {
-        toast({
-          title: 'Sin resultados',
-          description: `No se encontraron canciones ni álbumes para "${searchTerm}"`,
-          variant: 'destructive'
-        });
+        setSearchError('No se encontraron resultados para tu búsqueda.');
       }
     } catch (error) {
-      console.error('Error searching:', error);
-      setSearchError('Error al buscar. Inténtalo de nuevo.');
+      console.error('Search error:', error);
+      setSearchError('Error al buscar. Intenta de nuevo.');
       toast({
-        title: 'Error de búsqueda',
-        description: 'No se pudo realizar la búsqueda. Verifica tu conexión.',
-        variant: 'destructive'
+        title: "Error de búsqueda",
+        description: "No se pudo completar la búsqueda. Intenta de nuevo.",
+        variant: "destructive",
       });
     } finally {
       setIsSearching(false);
     }
-  }, [toast, recentSearches]);
-
-  const playAlbum = useCallback((album: Album) => {
-    if (album.tracks.length > 0) {
-      playTrack(album.tracks[0]);
-      album.tracks.slice(1).forEach(track => addToQueue(track));
-    }
-  }, [playTrack, addToQueue]);
-
-  const handleAlbumClick = useCallback((album: Album) => {
-    setSelectedAlbum(album);
-  }, []);
+  }, [toast]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -142,235 +130,223 @@ const SearchPage = () => {
     setSearchError(null);
   };
 
-  // Si estamos viendo un álbum, mostrar la página del álbum
-  if (selectedAlbum) {
-    return <AlbumPage album={selectedAlbum} />;
-  }
+  const handleRecentSearchClick = (search: string) => {
+    setSearchQuery(search);
+    handleSearch(search);
+  };
+
+  const removeRecentSearch = (searchToRemove: string) => {
+    const updated = recentSearches.filter(s => s !== searchToRemove);
+    setRecentSearches(updated);
+    localStorage.setItem('sf_recent_searches', JSON.stringify(updated));
+  };
+
+      if (selectedAlbum) {
+      return (
+        <AlbumPage 
+          album={selectedAlbum} 
+        />
+      );
+    }
 
   return (
-    <div className="p-6 space-y-8">
-      {/* Search Header */}
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-cyan bg-clip-text text-transparent">
-          Buscar
-        </h1>
-        
-        {/* Search Input */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="¿Qué quieres escuchar?"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="pl-10 bg-black/30 border-neon-purple/30 text-foreground placeholder:text-muted-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-neon-purple transition-colors"
-              onClick={clearSearch}
-            >
-              ×
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-black">
+      <div className="p-6 lg:p-8 space-y-8">
+        {/* Search Header */}
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl lg:text-4xl font-bold text-white">Buscar</h1>
+            <p className="text-gray-400 text-lg">Encuentra tu música favorita</p>
+          </div>
 
-      {/* Search Results */}
-      {isSearching && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin text-neon-purple" />
-            <span>Buscando...</span>
+          {/* Search Input */}
+          <div className="relative max-w-2xl">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              placeholder="Buscar canciones, artistas, álbumes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="pl-12 pr-12 h-12 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple rounded-full text-lg"
+            />
+            {searchQuery && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
-      )}
 
-      {searchError && (
-        <div className="text-center py-12">
-          <div className="text-red-400 mb-2">{searchError}</div>
-          <Button 
-            variant="outline" 
-            onClick={() => handleSearch(searchQuery)}
-            className="border-neon-purple/30 text-muted-foreground hover:text-neon-purple hover:bg-neon-purple/10 transition-all"
-          >
-            Reintentar
-          </Button>
-        </div>
-      )}
+        {/* Search Results or Browse Content */}
+        {searchQuery || searchResults.length > 0 || albumResults.length > 0 ? (
+          <div className="space-y-6">
+            {/* Search Results Tabs */}
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'tracks' | 'albums')} className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-2 bg-black/40 border-purple-500/30">
+                <TabsTrigger value="tracks" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                  <Music className="h-4 w-4 mr-2" />
+                  Canciones ({searchResults.length})
+                </TabsTrigger>
+                <TabsTrigger value="albums" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                  <Disc3 className="h-4 w-4 mr-2" />
+                  Álbumes ({albumResults.length})
+                </TabsTrigger>
+              </TabsList>
 
-      {(searchResults.length > 0 || albumResults.length > 0) && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Resultados para "{searchQuery || 'género seleccionado'}"
-          </h2>
-          
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'tracks' | 'albums')}>
-            <TabsList className="cyber-card border-neon bg-black/30">
-              <TabsTrigger 
-                value="tracks" 
-                className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple text-muted-foreground"
-              >
-                <Music className="h-4 w-4 mr-2" />
-                Canciones ({searchResults.length})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="albums"
-                className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple text-muted-foreground"
-              >
-                <Disc3 className="h-4 w-4 mr-2" />
-                Álbumes ({albumResults.length})
-              </TabsTrigger>
-            </TabsList>
+              <TabsContent value="tracks" className="space-y-6 mt-6">
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex items-center gap-3 text-purple-400">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span>Buscando canciones...</span>
+                    </div>
+                  </div>
+                ) : searchError ? (
+                  <Card className="bg-black/40 border-red-500/30">
+                    <CardContent className="p-8 text-center">
+                      <p className="text-red-400 mb-4">{searchError}</p>
+                      <Button onClick={() => handleSearch(searchQuery)} variant="outline">
+                        Intentar de nuevo
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : searchResults.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {searchResults.map((track) => (
+                      <TrackCard
+                        key={track.id}
+                        track={track}
+                        onPlay={playTrack}
+                        onAddToQueue={addToQueue}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </TabsContent>
 
-            <TabsContent value="tracks" className="space-y-4">
-              {searchResults.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                  {searchResults.map((track, index) => (
-                    <TrackCard
-                      key={`${track.id}-${index}`}
-                      track={track}
-                      onPlay={() => playTrack(track)}
-                      onAddToQueue={() => addToQueue(track)}
-                    />
+              <TabsContent value="albums" className="space-y-6 mt-6">
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex items-center gap-3 text-purple-400">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span>Buscando álbumes...</span>
+                    </div>
+                  </div>
+                ) : searchError ? (
+                  <Card className="bg-black/40 border-red-500/30">
+                    <CardContent className="p-8 text-center">
+                      <p className="text-red-400 mb-4">{searchError}</p>
+                      <Button onClick={() => handleSearch(searchQuery)} variant="outline">
+                        Intentar de nuevo
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : albumResults.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                         {albumResults.map((album) => (
+                       <AlbumCard
+                         key={album.id}
+                         album={album}
+                         onPlay={() => {
+                           if (album.tracks.length > 0) {
+                             playTrack(album.tracks[0]);
+                             album.tracks.slice(1).forEach(track => addToQueue(track));
+                           }
+                         }}
+                         onAlbumClick={() => setSelectedAlbum(album)}
+                       />
+                     ))}
+                  </div>
+                ) : null}
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Recent Searches */}
+            {recentSearches.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-white">Búsquedas Recientes</h2>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.slice(0, 8).map((search, index) => (
+                    <div key={index} className="flex items-center gap-2 bg-black/40 border border-purple-500/30 rounded-full px-4 py-2 group hover:border-purple-400/50 transition-colors">
+                      <button
+                        onClick={() => handleRecentSearchClick(search)}
+                        className="text-gray-300 hover:text-white transition-colors"
+                      >
+                        {search}
+                      </button>
+                      <button
+                        onClick={() => removeRecentSearch(search)}
+                        className="text-gray-500 hover:text-red-400 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <Card className="cyber-card border-neon">
-                  <CardContent className="p-8 text-center">
-                    <Music className="h-12 w-12 text-neon-purple/50 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      No se encontraron canciones
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Intenta con otro término de búsqueda.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+              </div>
+            )}
 
-            <TabsContent value="albums" className="space-y-4">
-              {albumResults.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                  {albumResults.map((album, index) => (
-                    <AlbumCard
-                      key={`${album.id}-${index}`}
-                      album={album}
-                      onPlay={() => playAlbum(album)}
-                      onAlbumClick={() => handleAlbumClick(album)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Card className="cyber-card border-neon">
-                  <CardContent className="p-8 text-center">
-                    <Disc3 className="h-12 w-12 text-neon-purple/50 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      No se encontraron álbumes
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Intenta con otro término de búsqueda.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-      )}
-
-      {/* Show content only when not searching and no results */}
-      {!isSearching && searchResults.length === 0 && albumResults.length === 0 && (
-        <>
-          {/* Recent Searches */}
-          {recentSearches.length > 0 && (
+            {/* Browse by Genre */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">Búsquedas recientes</h2>
-              <div className="flex flex-wrap gap-2">
-                {recentSearches.map((search) => (
-                  <Badge
-                    key={search}
-                    variant="outline"
-                    className="cursor-pointer border-neon-purple/30 text-muted-foreground hover:text-neon-purple hover:bg-neon-purple/10 hover:border-neon-purple px-3 py-1 transition-all"
-                    onClick={() => {
-                      setSearchQuery(search);
-                      handleSearch(search);
-                    }}
+              <h2 className="text-2xl font-bold text-white">Explorar por Género</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {musicGenres.map((genre) => {
+                  const Icon = genre.icon;
+                  return (
+                    <Card
+                      key={genre.name}
+                      className="group bg-black/40 backdrop-blur-sm border-purple-500/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-glow-purple/30 cursor-pointer hover:scale-105"
+                      onClick={() => handleSearch('', genre.name)}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <div className={cn(
+                          "w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-3 shadow-lg",
+                          genre.color
+                        )}>
+                          <Icon className="h-6 w-6 text-white" />
+                        </div>
+                        <h3 className="font-medium text-white group-hover:text-purple-300 transition-colors">
+                          {genre.name}
+                        </h3>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Trending Searches */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-white">Tendencias</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {['Rock Clásico', 'Synthwave', 'Jazz Moderno', 'Electrónica', 'Hip Hop', 'Pop'].map((trend) => (
+                  <Card
+                    key={trend}
+                    className="group bg-black/40 backdrop-blur-sm border-purple-500/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-glow-purple/30 cursor-pointer"
+                    onClick={() => handleSearch(trend)}
                   >
-                    {search}
-                  </Badge>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="h-5 w-5 text-purple-400" />
+                        <span className="text-white group-hover:text-purple-300 transition-colors">
+                          {trend}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Browse Categories */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Explorar géneros</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {musicGenres.map((genre) => {
-                const Icon = genre.icon;
-                return (
-                  <Card
-                    key={genre.name}
-                    className={`${genre.color} border-0 cursor-pointer hover:scale-105 transition-all duration-300 hover:shadow-glow-purple/50 group`}
-                    onClick={() => handleSearch('', genre.name.toLowerCase())}
-                  >
-                    <CardContent className="p-6 relative overflow-hidden">
-                      <h3 className="text-xl font-bold text-white mb-4">{genre.name}</h3>
-                      <Icon className="absolute bottom-4 right-4 h-12 w-12 text-white/20 group-hover:text-white/40 transition-colors" />
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
           </div>
-
-          {/* Popular Searches */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Búsquedas populares</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card 
-                className="cyber-card border-neon hover:shadow-glow-purple/50 transition-all cursor-pointer group"
-                onClick={() => handleSearch('trending music')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-gradient-to-br from-neon-pink to-neon-purple rounded-lg flex items-center justify-center shadow-glow-purple/30">
-                      <TrendingUp className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-foreground group-hover:text-neon-purple transition-colors">Música Trending</h3>
-                      <p className="text-sm text-muted-foreground">Lo más popular ahora</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="cyber-card border-neon hover:shadow-glow-cyan/50 transition-all cursor-pointer group"
-                onClick={() => handleSearch('new releases')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-gradient-to-br from-neon-cyan to-neon-purple rounded-lg flex items-center justify-center shadow-glow-cyan/30">
-                      <Music className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-foreground group-hover:text-neon-cyan transition-colors">Nuevos Lanzamientos</h3>
-                      <p className="text-sm text-muted-foreground">Lo último en música</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
