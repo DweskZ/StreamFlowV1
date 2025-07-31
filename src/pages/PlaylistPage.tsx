@@ -57,21 +57,26 @@ const PlaylistPage = () => {
 
   if (!playlist) {
     return (
-      <div className="p-6">
-        <Card className="bg-zinc-800/50 border-zinc-700">
-          <CardContent className="p-12 text-center">
-            <PlaySquare className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">
-              Playlist no encontrada
-            </h3>
-            <p className="text-zinc-400 mb-6">
-              Esta playlist no existe o ha sido eliminada.
-            </p>
-            <Button onClick={() => navigate('/app')} className="bg-green-600 hover:bg-green-700">
-              Volver al inicio
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-black">
+        <div className="p-6 lg:p-8">
+          <Card className="bg-black/40 border-purple-500/30">
+            <CardContent className="p-12 text-center">
+              <PlaySquare className="h-16 w-16 text-purple-400/50 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Playlist no encontrada
+              </h3>
+              <p className="text-gray-400 mb-6">
+                Esta playlist no existe o ha sido eliminada.
+              </p>
+              <Button 
+                onClick={() => navigate('/app')} 
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+              >
+                Volver al inicio
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -105,16 +110,12 @@ const PlaylistPage = () => {
   };
 
   const getTotalDuration = () => {
-    const totalSeconds = playlist.tracks.reduce((total, track) => {
-      return total + (parseInt(track.duration) || 0);
+    const totalSeconds = playlist.tracks.reduce((acc, track) => {
+      return acc + (parseInt(track.duration) || 0);
     }, 0);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
-    
-    if (hours > 0) {
-      return `${hours} h ${minutes} min`;
-    }
-    return `${minutes} min`;
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
   const isCurrentlyPlaying = (track: Track) => {
@@ -128,11 +129,13 @@ const PlaylistPage = () => {
   };
 
   const handleSaveEdit = () => {
-    updatePlaylist(playlist.id, {
-      name: editName.trim(),
-      description: editDescription.trim() || undefined
-    });
-    setIsEditDialogOpen(false);
+    if (editName.trim()) {
+      updatePlaylist(playlist.id, {
+        name: editName.trim(),
+        description: editDescription.trim() || undefined
+      });
+      setIsEditDialogOpen(false);
+    }
   };
 
   const handleDeletePlaylist = () => {
@@ -141,310 +144,248 @@ const PlaylistPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Back Button */}
-      <Button
-        variant="ghost"
-        className="text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300 p-0"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="h-5 w-5 mr-2" />
-        Volver
-      </Button>
-
-      {/* Header */}
-      <div className="flex items-end gap-6">
-        <div className="h-60 w-60 bg-gradient-to-br from-neon-purple via-neon-pink to-neon-cyan rounded-xl flex items-center justify-center shadow-glow-purple/50 border border-neon-purple/30">
-          <PlaySquare className="h-20 w-20 text-white animate-pulse" />
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-black">
+      <div className="p-6 lg:p-8 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end gap-6">
+          <div className="h-48 w-48 lg:h-60 lg:w-60 bg-gradient-to-br from-cyan-600 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-glow-cyan/50 border border-cyan-500/30">
+            <PlaySquare className="h-16 w-16 lg:h-20 lg:w-20 text-white" />
+          </div>
+          <div className="space-y-4 flex-1">
+            <div>
+              <p className="text-sm font-medium text-cyan-400 uppercase tracking-wider">PLAYLIST</p>
+              <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                {playlist.name}
+              </h1>
+              <p className="text-gray-400 text-lg mb-2">
+                {playlist.description || 'Sin descripción'}
+              </p>
+              <p className="text-gray-400">
+                {playlist.tracks.length} canción{playlist.tracks.length !== 1 ? 'es' : ''} • {getTotalDuration()}
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              size="lg"
+              className="h-14 w-14 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 hover:scale-110 transition-all duration-300 shadow-glow-cyan"
+              onClick={playAllSongs}
+              disabled={filteredTracks.length === 0}
+            >
+              <Play className="h-6 w-6 text-white fill-white ml-1" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="h-12 px-6 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
+              onClick={shufflePlayAll}
+              disabled={filteredTracks.length === 0}
+            >
+              <Shuffle className="h-5 w-5 mr-2" />
+              Mezclar
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar en la playlist..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:shadow-glow-cyan"
+            />
+          </div>
+
+          {/* Playlist Actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="h-12 px-6 text-gray-400 hover:text-white hover:bg-gray-500/10 border border-gray-500/30 hover:border-gray-400/50 transition-all duration-300"
+              >
+                <MoreHorizontal className="h-5 w-5 mr-2" />
+                Más opciones
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48 bg-black/95 backdrop-blur-xl border-cyan-500/30">
+              <DropdownMenuItem
+                onClick={handleEditPlaylist}
+                className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar playlist
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Eliminar playlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Songs List */}
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium text-neon-cyan uppercase tracking-wider">PLAYLIST</p>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-cyan bg-clip-text text-transparent mb-2">
-              {playlist.name}
-            </h1>
-            {playlist.description && (
-              <p className="text-foreground/80 mb-2">{playlist.description}</p>
-            )}
-            <p className="text-muted-foreground">
-              {playlist.tracks.length} canción{playlist.tracks.length !== 1 ? 'es' : ''}
-              {playlist.tracks.length > 0 && ` • ${getTotalDuration()}`}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center gap-4">
-        <Button
-          size="lg"
-          className="h-14 w-14 rounded-full neon-button p-0 hover:scale-110 transition-all duration-300"
-          onClick={playAllSongs}
-          disabled={filteredTracks.length === 0}
-        >
-          <Play className="h-6 w-6 text-white fill-white ml-1" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="lg"
-          className="text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
-          onClick={shufflePlayAll}
-          disabled={filteredTracks.length === 0}
-        >
-          <Shuffle className="h-6 w-6" />
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="lg" 
-              className="text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300"
-            >
-              <MoreHorizontal className="h-6 w-6" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="cyber-card border-neon backdrop-blur-glass">
-            <DropdownMenuItem 
-              className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300"
-              onClick={handleEditPlaylist}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar detalles
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300">
-              <Download className="h-4 w-4 mr-2" />
-              Descargar
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-300"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <Trash className="h-4 w-4 mr-2" />
-              Eliminar playlist
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Search */}
-      {playlist.tracks.length > 0 && (
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Buscar en esta playlist"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-black/30 border-neon-purple/30 text-foreground placeholder:text-muted-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all"
-          />
-        </div>
-      )}
-
-      {/* Song List */}
-      {playlist.tracks.length === 0 ? (
-        <Card className="cyber-card border-neon">
-          <CardContent className="p-12 text-center">
-            <PlaySquare className="h-16 w-16 text-neon-purple/50 mx-auto mb-4 animate-pulse" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Tu playlist está vacía
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Busca canciones y álbumes para añadir a tu playlist.
-            </p>
-            <Button 
-              className="neon-button"
-              onClick={() => navigate('/app/search')}
-            >
-              Buscar música
-            </Button>
-          </CardContent>
-        </Card>
-      ) : filteredTracks.length === 0 ? (
-        <Card className="cyber-card border-neon">
-          <CardContent className="p-8 text-center">
-            <Search className="h-12 w-12 text-neon-purple/50 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              No se encontraron canciones
-            </h3>
-            <p className="text-muted-foreground">
-              Intenta con otro término de búsqueda.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {/* Header Row */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-muted-foreground border-b border-neon-purple/20">
-            <div className="col-span-1">#</div>
-            <div className="col-span-6">TÍTULO</div>
-            <div className="col-span-3">ÁLBUM</div>
-            <div className="col-span-1">FECHA</div>
-            <div className="col-span-1 flex justify-center">
-              <Clock className="h-4 w-4" />
-            </div>
-          </div>
-
-          {/* Songs */}
-          {filteredTracks.map((track, index) => (
-            <div
-              key={track.id}
-              className={cn(
-                "grid grid-cols-12 gap-4 px-4 py-2 rounded-lg hover:bg-neon-purple/10 hover:shadow-glow-purple/30 group transition-all duration-300 cursor-pointer",
-                isCurrentlyPlaying(track) && "bg-neon-purple/20 text-neon-purple shadow-glow-purple/50"
-              )}
-              onClick={() => playTrack(track)}
-            >
-              <div className="col-span-1 flex items-center text-muted-foreground group-hover:hidden">
-                {isCurrentlyPlaying(track) ? (
-                  <div className="h-4 w-4 flex items-center justify-center">
-                    <div className="w-1 h-1 bg-neon-purple rounded-full animate-pulse"></div>
-                  </div>
-                ) : (
-                  index + 1
-                )}
-              </div>
-              <div className="col-span-1 items-center hidden group-hover:flex">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-foreground hover:bg-transparent hover:text-neon-purple hover:scale-110 transition-all duration-300"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playTrack(track);
-                  }}
+          {filteredTracks.length === 0 ? (
+            <Card className="bg-black/40 border-cyan-500/30">
+              <CardContent className="p-12 text-center">
+                <PlaySquare className="h-16 w-16 text-cyan-400/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {searchQuery ? 'No se encontraron canciones' : 'Playlist vacía'}
+                </h3>
+                <p className="text-gray-400">
+                  {searchQuery 
+                    ? 'Intenta con otro término de búsqueda.' 
+                    : 'Agrega canciones a esta playlist para comenzar.'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {filteredTracks.map((track, index) => (
+                <Card
+                  key={track.id}
+                  className={cn(
+                    "group bg-black/40 backdrop-blur-sm border-cyan-500/20 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-glow-cyan/30",
+                    isCurrentlyPlaying(track) && "border-cyan-400/50 shadow-glow-cyan/30"
+                  )}
                 >
-                  <Play className="h-4 w-4 fill-current" />
-                </Button>
-              </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Track Number */}
+                      <div className="w-8 text-center text-sm text-gray-400 font-mono">
+                        {index + 1}
+                      </div>
 
-              <div className="col-span-6 flex items-center gap-3 min-w-0">
-                <div className="relative">
-                  <img
-                    src={track.image}
-                    alt={track.name}
-                    className="h-10 w-10 rounded-md border border-neon-purple/30"
-                  />
-                  <div className="absolute inset-0 rounded-md border border-transparent bg-gradient-to-br from-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <div className="min-w-0">
-                  <p className={cn(
-                    "font-medium truncate transition-colors duration-300",
-                    isCurrentlyPlaying(track) ? "text-neon-purple" : "text-foreground group-hover:text-neon-purple"
-                  )}>
-                    {track.name}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate group-hover:text-neon-cyan transition-colors duration-300">
-                    {track.artist_name}
-                  </p>
-                </div>
-              </div>
+                      {/* Album Cover */}
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={track.album_image || track.image || '/placeholder.svg'}
+                          alt={`${track.album_name} cover`}
+                          className="w-12 h-12 rounded-lg object-cover shadow-lg border border-cyan-500/30"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder.svg';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <Button
+                            onClick={() => playTrack(track)}
+                            className="h-8 w-8 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-full shadow-glow-cyan transition-all duration-200 hover:scale-110"
+                          >
+                            <Play className="h-3 w-3 fill-current text-white ml-0.5" />
+                          </Button>
+                        </div>
+                      </div>
 
-              <div className="col-span-3 flex items-center text-muted-foreground truncate group-hover:text-neon-cyan transition-colors duration-300">
-                {track.album_name}
-              </div>
+                      {/* Track Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className={cn(
+                          "font-medium text-white truncate",
+                          isCurrentlyPlaying(track) && "text-cyan-400"
+                        )}>
+                          {track.name}
+                        </h3>
+                        <p className="text-sm text-gray-400 truncate">
+                          {track.artist_name}
+                        </p>
+                      </div>
 
-              <div className="col-span-1 flex items-center text-muted-foreground text-sm group-hover:text-neon-cyan transition-colors duration-300">
-                {new Date(track.releasedate).toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: '2-digit'
-                })}
-              </div>
+                      {/* Duration */}
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-mono">{formatDuration(track.duration)}</span>
+                      </div>
 
-              <div className="col-span-1 flex items-center justify-between">
-                <span className="text-muted-foreground text-sm group-hover:hidden">
-                  {formatDuration(track.duration)}
-                </span>
-                <div className="hidden group-hover:flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-neon-purple hover:scale-110 transition-all duration-300"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="cyber-card border-neon backdrop-blur-glass">
-                      <DropdownMenuItem 
-                        className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToQueue(track);
-                        }}
-                      >
-                        Añadir a la cola
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeTrackFromPlaylist(playlist.id, track.id);
-                        }}
-                      >
-                        Eliminar de esta playlist
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => addToQueue(track)}
+                          className="h-8 w-8 rounded-full text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all duration-300"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all duration-300"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-48 bg-black/95 backdrop-blur-xl border-cyan-500/30">
+                            <DropdownMenuItem
+                              onClick={() => removeTrackFromPlaylist(playlist.id, track.id)}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            >
+                              Quitar de la playlist
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </div>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] cyber-card border-neon backdrop-blur-glass">
+        <DialogContent className="bg-black/95 backdrop-blur-xl border-cyan-500/30">
           <DialogHeader>
-            <DialogTitle className="text-foreground bg-gradient-to-r from-neon-purple to-neon-cyan bg-clip-text text-transparent font-bold">
-              Editar detalles de la playlist
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Cambia el nombre y la descripción de tu playlist.
+            <DialogTitle className="text-white">Editar Playlist</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Modifica el nombre y descripción de tu playlist.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-name" className="text-foreground">
-                Nombre
-              </Label>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name" className="text-white">Nombre</Label>
               <Input
-                id="edit-name"
+                id="name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="bg-black/30 border-neon-purple/30 text-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all"
+                className="bg-black/40 border-cyan-500/30 text-white"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-description" className="text-foreground">
-                Descripción (opcional)
-              </Label>
+            <div>
+              <Label htmlFor="description" className="text-white">Descripción</Label>
               <Textarea
-                id="edit-description"
+                id="description"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="bg-black/30 border-neon-purple/30 text-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all resize-none"
+                className="bg-black/40 border-cyan-500/30 text-white"
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button
-              type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => setIsEditDialogOpen(false)}
-              className="border-neon-purple/30 text-muted-foreground hover:text-neon-purple hover:bg-neon-purple/10 hover:border-neon-purple transition-all duration-300"
+              className="text-gray-400 hover:text-white"
             >
               Cancelar
             </Button>
             <Button
-              type="button"
               onClick={handleSaveEdit}
-              disabled={!editName.trim()}
-              className="neon-button disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
             >
               Guardar
             </Button>
@@ -454,26 +395,24 @@ const PlaylistPage = () => {
 
       {/* Delete Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] cyber-card border-neon backdrop-blur-glass">
+        <DialogContent className="bg-black/95 backdrop-blur-xl border-red-500/30">
           <DialogHeader>
-            <DialogTitle className="text-red-400 font-bold">¿Eliminar playlist?</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Esta acción no se puede deshacer. Se eliminará "{playlist.name}" de tu biblioteca.
+            <DialogTitle className="text-white">Eliminar Playlist</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              ¿Estás seguro de que quieres eliminar "{playlist.name}"? Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
-              type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => setIsDeleteDialogOpen(false)}
-              className="border-neon-purple/30 text-muted-foreground hover:text-neon-purple hover:bg-neon-purple/10 hover:border-neon-purple transition-all duration-300"
+              className="text-gray-400 hover:text-white"
             >
               Cancelar
             </Button>
             <Button
-              type="button"
               onClick={handleDeletePlaylist}
-              className="bg-red-600 hover:bg-red-700 text-white border border-red-500 hover:shadow-glow-red transition-all duration-300"
+              className="bg-red-600 hover:bg-red-700"
             >
               Eliminar
             </Button>

@@ -67,239 +67,173 @@ const LikedSongsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-end gap-6">
-        <div className="h-60 w-60 bg-gradient-to-br from-neon-purple via-neon-pink to-neon-cyan rounded-xl flex items-center justify-center shadow-glow-purple/50 border border-neon-purple/30">
-          <Heart className="h-20 w-20 text-white fill-current animate-pulse" />
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-black">
+      <div className="p-6 lg:p-8 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end gap-6">
+          <div className="h-48 w-48 lg:h-60 lg:w-60 bg-gradient-to-br from-purple-600 via-pink-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-glow-purple/50 border border-purple-500/30">
+            <Heart className="h-16 w-16 lg:h-20 lg:w-20 text-white fill-current animate-pulse" />
+          </div>
+          <div className="space-y-4 flex-1">
+            <div>
+              <p className="text-sm font-medium text-purple-400 uppercase tracking-wider">PLAYLIST</p>
+              <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                Canciones que te gustan
+              </h1>
+              <p className="text-gray-400 text-lg">
+                {likedSongs.length} canción{likedSongs.length !== 1 ? 'es' : ''}
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              size="lg"
+              className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 p-0 hover:scale-110 transition-all duration-300 shadow-glow-purple"
+              onClick={playAllSongs}
+              disabled={filteredSongs.length === 0}
+            >
+              <Play className="h-6 w-6 text-white fill-white ml-1" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="h-12 px-6 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300"
+              onClick={shufflePlayAll}
+              disabled={filteredSongs.length === 0}
+            >
+              <Shuffle className="h-5 w-5 mr-2" />
+              Mezclar
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar en canciones que te gustan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-black/40 border-purple-500/30 text-white placeholder:text-gray-400 focus:border-purple-400 focus:shadow-glow-purple"
+            />
+          </div>
+        </div>
+
+        {/* Songs List */}
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium text-neon-cyan uppercase tracking-wider">PLAYLIST</p>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-cyan bg-clip-text text-transparent mb-2">
-              Canciones que te gustan
-            </h1>
-            <p className="text-muted-foreground">
-              {likedSongs.length} canción{likedSongs.length !== 1 ? 'es' : ''}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center gap-4">
-        <Button
-          size="lg"
-          className="h-14 w-14 rounded-full neon-button p-0 hover:scale-110 transition-all duration-300"
-          onClick={playAllSongs}
-          disabled={filteredSongs.length === 0}
-        >
-          <Play className="h-6 w-6 text-white fill-white ml-1" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="lg"
-          className="text-muted-foreground hover:text-neon-purple hover:shadow-glow-purple transition-all duration-300"
-          onClick={shufflePlayAll}
-          disabled={filteredSongs.length === 0}
-        >
-          <Shuffle className="h-6 w-6" />
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="lg" 
-              className="text-muted-foreground hover:text-neon-cyan hover:shadow-glow-cyan transition-all duration-300"
-            >
-              <MoreHorizontal className="h-6 w-6" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="cyber-card border-neon backdrop-blur-glass">
-            <DropdownMenuItem className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300">
-              <Download className="h-4 w-4 mr-2" />
-              Descargar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Search */}
-      {likedSongs.length > 0 && (
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Buscar en canciones que te gustan"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-black/30 border-neon-purple/30 text-foreground placeholder:text-muted-foreground focus:border-neon-purple focus:shadow-glow-purple transition-all"
-          />
-        </div>
-      )}
-
-      {/* Song List */}
-      {likedSongs.length === 0 ? (
-        <Card className="cyber-card border-neon">
-          <CardContent className="p-12 text-center">
-            <Heart className="h-16 w-16 text-neon-purple/50 mx-auto mb-4 animate-pulse" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              No tienes canciones que te gusten
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Las canciones que marques como favoritas aparecerán aquí.
-            </p>
-            <Button className="neon-button">
-              Buscar música
-            </Button>
-          </CardContent>
-        </Card>
-      ) : filteredSongs.length === 0 ? (
-        <Card className="cyber-card border-neon">
-          <CardContent className="p-8 text-center">
-            <Search className="h-12 w-12 text-neon-purple/50 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              No se encontraron canciones
-            </h3>
-            <p className="text-muted-foreground">
-              Intenta con otro término de búsqueda.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {/* Header Row */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-muted-foreground border-b border-neon-purple/20">
-            <div className="col-span-1">#</div>
-            <div className="col-span-6">TÍTULO</div>
-            <div className="col-span-3">ÁLBUM</div>
-            <div className="col-span-1">FECHA</div>
-            <div className="col-span-1 flex justify-center">
-              <Clock className="h-4 w-4" />
-            </div>
-          </div>
-
-          {/* Songs */}
-          {filteredSongs.map((track, index) => (
-            <div
-              key={track.id}
-              className={cn(
-                "grid grid-cols-12 gap-4 px-4 py-2 rounded-lg hover:bg-neon-purple/10 hover:shadow-glow-purple/30 group transition-all duration-300 cursor-pointer",
-                isCurrentlyPlaying(track) && "bg-neon-purple/20 text-neon-purple shadow-glow-purple/50"
-              )}
-              onClick={() => playTrack(track)}
-            >
-              <div className="col-span-1 flex items-center text-muted-foreground group-hover:hidden">
-                {isCurrentlyPlaying(track) ? (
-                  <div className="h-4 w-4 flex items-center justify-center">
-                    <div className="w-1 h-1 bg-neon-purple rounded-full animate-pulse"></div>
-                  </div>
-                ) : (
-                  index + 1
-                )}
-              </div>
-              <div className="col-span-1 items-center hidden group-hover:flex">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-foreground hover:bg-transparent hover:text-neon-purple hover:scale-110 transition-all duration-300"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playTrack(track);
-                  }}
+          {filteredSongs.length === 0 ? (
+            <Card className="bg-black/40 border-purple-500/30">
+              <CardContent className="p-12 text-center">
+                <Heart className="h-16 w-16 text-purple-400/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {searchQuery ? 'No se encontraron canciones' : 'No tienes canciones favoritas'}
+                </h3>
+                <p className="text-gray-400">
+                  {searchQuery 
+                    ? 'Intenta con otro término de búsqueda.' 
+                    : 'Comienza a agregar canciones que te gusten para verlas aquí.'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {filteredSongs.map((track, index) => (
+                <Card
+                  key={track.id}
+                  className={cn(
+                    "group bg-black/40 backdrop-blur-sm border-purple-500/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-glow-purple/30",
+                    isCurrentlyPlaying(track) && "border-purple-400/50 shadow-glow-purple/30"
+                  )}
                 >
-                  <Play className="h-4 w-4 fill-current" />
-                </Button>
-              </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Track Number */}
+                      <div className="w-8 text-center text-sm text-gray-400 font-mono">
+                        {index + 1}
+                      </div>
 
-              <div className="col-span-6 flex items-center gap-3 min-w-0">
-                <div className="relative">
-                  <img
-                    src={track.image}
-                    alt={track.name}
-                    className="h-10 w-10 rounded-md border border-neon-purple/30"
-                  />
-                  <div className="absolute inset-0 rounded-md border border-transparent bg-gradient-to-br from-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <div className="min-w-0">
-                  <p className={cn(
-                    "font-medium truncate transition-colors duration-300",
-                    isCurrentlyPlaying(track) ? "text-neon-purple" : "text-foreground group-hover:text-neon-purple"
-                  )}>
-                    {track.name}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate group-hover:text-neon-cyan transition-colors duration-300">
-                    {track.artist_name}
-                  </p>
-                </div>
-              </div>
+                      {/* Album Cover */}
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={track.album_image || track.image || '/placeholder.svg'}
+                          alt={`${track.album_name} cover`}
+                          className="w-12 h-12 rounded-lg object-cover shadow-lg border border-purple-500/30"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder.svg';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <Button
+                            onClick={() => playTrack(track)}
+                            className="h-8 w-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-full shadow-glow-purple transition-all duration-200 hover:scale-110"
+                          >
+                            <Play className="h-3 w-3 fill-current text-white ml-0.5" />
+                          </Button>
+                        </div>
+                      </div>
 
-              <div className="col-span-3 flex items-center text-muted-foreground truncate group-hover:text-neon-cyan transition-colors duration-300">
-                {track.album_name}
-              </div>
+                      {/* Track Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className={cn(
+                          "font-medium text-white truncate",
+                          isCurrentlyPlaying(track) && "text-purple-400"
+                        )}>
+                          {track.name}
+                        </h3>
+                        <p className="text-sm text-gray-400 truncate">
+                          {track.artist_name}
+                        </p>
+                      </div>
 
-              <div className="col-span-1 flex items-center text-muted-foreground text-sm group-hover:text-neon-cyan transition-colors duration-300">
-                {new Date(track.releasedate).toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: '2-digit'
-                })}
-              </div>
+                      {/* Duration */}
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-mono">{formatDuration(track.duration)}</span>
+                      </div>
 
-              <div className="col-span-1 flex items-center justify-between">
-                <span className="text-muted-foreground text-sm group-hover:hidden">
-                  {formatDuration(track.duration)}
-                </span>
-                <div className="hidden group-hover:flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-neon-pink hover:text-neon-pink/80 hover:scale-110 transition-all duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFromLiked(track.id);
-                    }}
-                  >
-                    <Heart className="h-4 w-4 fill-current" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-neon-purple hover:scale-110 transition-all duration-300"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="cyber-card border-neon backdrop-blur-glass">
-                      <DropdownMenuItem 
-                        className="text-foreground hover:bg-neon-purple/20 hover:text-neon-purple transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToQueue(track);
-                        }}
-                      >
-                        Añadir a la cola
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFromLiked(track.id);
-                        }}
-                      >
-                        Eliminar de Me gusta
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => addToQueue(track)}
+                          className="h-8 w-8 rounded-full text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all duration-300"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-300"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-48 bg-black/95 backdrop-blur-xl border-purple-500/30">
+                            <DropdownMenuItem
+                              onClick={() => removeFromLiked(track.id)}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            >
+                              Quitar de favoritos
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
