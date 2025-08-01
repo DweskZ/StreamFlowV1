@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import TrackCard from '@/components/TrackCardNew';
+import AudioDebug from '@/components/AudioDebug';
 import { Track } from '@/types/music';
 import { 
   Heart, 
@@ -209,6 +210,11 @@ const Dashboard = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Debug Component - Remove in production */}
+        <div className="mt-8">
+          <AudioDebug />
         </div>
       </div>
     </div>

@@ -9,7 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 
 export default function MainLayout() {
-  const { currentTrack, nextTrack, prevTrack } = usePlayer();
+  const { 
+    currentTrack, 
+    nextTrack, 
+    prevTrack, 
+    isRepeatMode, 
+    isShuffleMode, 
+    toggleRepeat, 
+    toggleShuffle 
+  } = usePlayer();
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -46,7 +54,12 @@ export default function MainLayout() {
       <FixedPlayerBar 
         currentTrack={currentTrack} 
         onEnded={nextTrack}
+        onNext={nextTrack}
         onPrevious={prevTrack}
+        isRepeatMode={isRepeatMode}
+        isShuffleMode={isShuffleMode}
+        onToggleRepeat={toggleRepeat}
+        onToggleShuffle={toggleShuffle}
       />
     </div>
   );

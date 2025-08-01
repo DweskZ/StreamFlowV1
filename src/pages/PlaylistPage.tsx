@@ -14,8 +14,7 @@ import {
   Edit,
   Trash,
   Download,
-  Clock,
-  ArrowLeft
+  Clock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,13 +39,7 @@ const PlaylistPage = () => {
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
   const { playlists, deletePlaylist, updatePlaylist, removeTrackFromPlaylist, addToRecentlyPlayed } = useLibrary();
-  const { playTrack: playerPlayTrack, addToQueue, currentTrack } = usePlayer();
-
-  const playTrack = useCallback((track: Track) => {
-    addToRecentlyPlayed(track);
-    playerPlayTrack(track);
-  }, [addToRecentlyPlayed, playerPlayTrack]);
-  
+  const { playTrack: playerPlayTrack, playFromContext, addToQueue, currentTrack } = usePlayer();
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -54,6 +47,24 @@ const PlaylistPage = () => {
   const [editDescription, setEditDescription] = useState('');
 
   const playlist = playlists.find(p => p.id === playlistId);
+
+  const filteredTracks = playlist?.tracks.filter(track =>
+    track.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    track.artist_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    track.album_name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const playTrack = useCallback((track: Track, index?: number) => {
+    addToRecentlyPlayed(track);
+    
+    // Si se proporciona un índice, reproducir desde el contexto de la playlist
+    if (typeof index === 'number') {
+      playFromContext(track, filteredTracks, index);
+    } else {
+      // Reproducción individual (sin contexto)
+      playerPlayTrack(track);
+    }
+  }, [addToRecentlyPlayed, playerPlayTrack, playFromContext, filteredTracks]);
 
   if (!playlist) {
     return (
@@ -81,24 +92,18 @@ const PlaylistPage = () => {
     );
   }
 
-  const filteredTracks = playlist.tracks.filter(track =>
-    track.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.artist_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.album_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const playAllSongs = () => {
     if (filteredTracks.length > 0) {
-      playTrack(filteredTracks[0]);
-      filteredTracks.slice(1).forEach(track => addToQueue(track));
+      // Reproducir la primera canción con contexto completo
+      playTrack(filteredTracks[0], 0);
     }
   };
 
   const shufflePlayAll = () => {
     if (filteredTracks.length > 0) {
       const shuffled = [...filteredTracks].sort(() => Math.random() - 0.5);
-      playTrack(shuffled[0]);
-      shuffled.slice(1).forEach(track => addToQueue(track));
+      // Reproducir desde la lista mezclada
+      playFromContext(shuffled[0], shuffled, 0);
     }
   };
 
