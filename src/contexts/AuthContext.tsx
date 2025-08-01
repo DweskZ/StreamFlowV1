@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
@@ -57,14 +57,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Registro exitoso', description: 'Revisa tu correo para confirmar tu cuenta' });
+    
+    console.log('Attempting to sign up user with email:', email);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/app`
+        }
+      });
+      
+      console.log('SignUp response data:', data);
+      console.log('SignUp response error:', error);
+      
+      if (error) {
+        console.error('SignUp error details:', error);
+        setError(error.message);
+        toast({ 
+          title: 'Error en el registro', 
+          description: error.message, 
+          variant: 'destructive' 
+        });
+        throw error;
+      } else {
+        console.log('SignUp successful, user:', data.user);
+        console.log('SignUp session:', data.session);
+        
+        if (data.user && !data.session) {
+          // Email confirmation required
+          toast({ 
+            title: 'Registro exitoso', 
+            description: 'Revisa tu correo electrónico para confirmar tu cuenta antes de iniciar sesión' 
+          });
+        } else if (data.session) {
+          // User is immediately signed in
+          toast({ 
+            title: 'Registro exitoso', 
+            description: 'Tu cuenta ha sido creada exitosamente' 
+          });
+        }
+      }
+    } catch (err) {
+      console.error('SignUp catch error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido durante el registro';
+      setError(errorMessage);
+      toast({ 
+        title: 'Error en el registro', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const signOut = async () => {
@@ -121,19 +167,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   };
 
+  const contextValue = useMemo(() => ({
+    user, 
+    session, 
+    loading, 
+    error, 
+    signIn, 
+    signUp, 
+    signOut, 
+    resetPassword,
+    signInWithGoogle,
+    signInWithGithub
+  }), [user, session, loading, error]);
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
-      error, 
-      signIn, 
-      signUp, 
-      signOut, 
-      resetPassword,
-      signInWithGoogle,
-      signInWithGithub
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

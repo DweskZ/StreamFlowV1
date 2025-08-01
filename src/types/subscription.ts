@@ -103,6 +103,27 @@ export const PLAN_FEATURES = {
   ]
 } as const;
 
+export const PLANS = [
+  {
+    id: 'free',
+    name: 'Plan Gratuito',
+    price: 0,
+    features: PLAN_FEATURES.free
+  },
+  {
+    id: 'premium_monthly',
+    name: 'Premium Mensual',
+    price: 9.99,
+    features: PLAN_FEATURES.premium_monthly
+  },
+  {
+    id: 'premium_annual',
+    name: 'Premium Anual',
+    price: 99.99,
+    features: PLAN_FEATURES.premium_annual
+  }
+] as const;
+
 export const PLAN_LIMITS = {
   free: {
     maxPlaylists: 3,

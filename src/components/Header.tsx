@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings, Crown, Menu, X, Music, Mic, TrendingUp } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings, Crown, Menu, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlanInfo } from '@/hooks/useSubscription';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useQuickSearch } from '@/hooks/useQuickSearch';
+import QuickSearchResults from '@/components/QuickSearchResults';
 
 interface HeaderProps {
   readonly onSearch?: (query: string) => void;
@@ -19,27 +21,27 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
   const { isPremium } = usePlanInfo();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Popular search suggestions
-  const searchSuggestions = [
-    { icon: Music, text: 'Rock clásico', category: 'Género' },
-    { icon: TrendingUp, text: 'Tendencias 2024', category: 'Popular' },
-    { icon: Mic, text: 'Duran Duran', category: 'Artista' },
-    { icon: Music, text: 'Synthwave', category: 'Género' },
-    { icon: TrendingUp, text: 'Nuevos lanzamientos', category: 'Popular' },
-  ];
+  
+  // Use quick search hook
+  const { 
+    query: searchQuery, 
+    setQuery: setSearchQuery,
+    results: searchResults,
+    loading: searchLoading,
+    error: searchError,
+    isOpen: showSearchResults,
+    clearSearch,
+    closeResults,
+    openResults
+  } = useQuickSearch();
 
   // Clear search when navigating away from search page
   useEffect(() => {
     if (!location.pathname.includes('/search')) {
-      setSearchQuery('');
-      setShowSearchSuggestions(false);
+      clearSearch();
     }
-  }, [location.pathname]);
+  }, [location.pathname, clearSearch]);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -49,7 +51,7 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
         // Navigate to search page if no onSearch handler
         navigate(`/app/search?q=${encodeURIComponent(searchQuery.trim())}`);
       }
-      setShowSearchSuggestions(false);
+      closeResults();
     }
   };
 
@@ -57,43 +59,27 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
     if (e.key === 'Enter') {
       handleSearch();
     } else if (e.key === 'Escape') {
-      setShowSearchSuggestions(false);
+      closeResults();
       searchInputRef.current?.blur();
     }
   };
 
   const handleSearchFocus = () => {
-    setIsSearchFocused(true);
-    if (searchQuery.trim()) {
-      setShowSearchSuggestions(true);
-    }
+    openResults();
   };
 
   const handleSearchBlur = () => {
-    setIsSearchFocused(false);
-    // Delay hiding suggestions to allow clicking on them
-    setTimeout(() => setShowSearchSuggestions(false), 200);
+    // Delay hiding results to allow clicking on them
+    setTimeout(() => closeResults(), 200);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setShowSearchSuggestions(value.trim().length > 0);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    if (onSearch) {
-      onSearch(suggestion);
-    } else {
-      navigate(`/app/search?q=${encodeURIComponent(suggestion)}`);
-    }
-    setShowSearchSuggestions(false);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-    setShowSearchSuggestions(false);
+  const handleClearSearch = () => {
+    clearSearch();
     searchInputRef.current?.focus();
   };
 
@@ -164,7 +150,7 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={clearSearch}
+                onClick={handleClearSearch}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 rounded-full text-muted-foreground hover:text-white transition-colors"
               >
                 <X className="h-3 w-3" />
@@ -172,46 +158,16 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
             )}
           </div>
 
-          {/* Search Suggestions Dropdown */}
-          {showSearchSuggestions && (
+          {/* Quick Search Results Dropdown */}
+          {showSearchResults && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-xl border border-purple-500/30 rounded-lg shadow-xl z-50">
-              <div className="p-2">
-                {/* Recent searches or suggestions */}
-                <div className="space-y-1">
-                  {searchSuggestions.map((suggestion, index) => {
-                    const Icon = suggestion.icon;
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion.text)}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-purple-500/20 rounded-md transition-all duration-200 group"
-                      >
-                        <Icon className="h-4 w-4 text-purple-400 group-hover:text-purple-300" />
-                        <div className="flex-1 text-left">
-                          <div className="font-medium">{suggestion.text}</div>
-                          <div className="text-xs text-gray-500">{suggestion.category}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Quick search options */}
-                <div className="border-t border-purple-500/20 mt-2 pt-2">
-                  <div className="text-xs text-gray-500 px-3 py-1 mb-1">Búsqueda rápida</div>
-                  <div className="flex flex-wrap gap-2">
-                    {['Rock', 'Pop', 'Electrónica', 'Jazz'].map((genre) => (
-                      <button
-                        key={genre}
-                        onClick={() => handleSuggestionClick(genre)}
-                        className="px-3 py-1 text-xs bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 rounded-full transition-colors"
-                      >
-                        {genre}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <QuickSearchResults
+                results={searchResults}
+                loading={searchLoading}
+                error={searchError}
+                query={searchQuery}
+                onSelectTrack={closeResults}
+              />
             </div>
           )}
         </div>

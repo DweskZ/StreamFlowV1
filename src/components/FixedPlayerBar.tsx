@@ -30,7 +30,7 @@ export default function FixedPlayerBar({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const { addToLiked, removeFromLiked, likedSongs, playlists, addTrackToPlaylist } = useLibrary();
+  const { addToLiked, removeFromLiked, likedSongs, playlists, addTrackToPlaylist, createPlaylist } = useLibrary();
   const { user } = useAuth();
 
   const isAuthenticated = !!user;
@@ -221,22 +221,43 @@ export default function FixedPlayerBar({
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-48 cyber-card border-purple-500/30 backdrop-blur-xl" side="top" align="start">
+                <PopoverContent className="w-64 cyber-card border-purple-500/30 backdrop-blur-xl" side="top" align="start">
                   <div className="space-y-1">
                     <div className="px-3 py-2 text-xs font-medium text-gray-400 border-b border-purple-500/20">Agregar a playlist</div>
-                    {playlists.map((playlist) => (
-                      <button
-                        key={playlist.id}
-                        onClick={() => {
-                          const libraryTrack = convertToLibraryTrack(currentTrack);
-                          addTrackToPlaylist(playlist.id, libraryTrack);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-white hover:bg-purple-500/20 hover:text-purple-300 rounded flex items-center gap-2 transition-all duration-300"
-                      >
-                        <ListMusic className="w-4 h-4 text-cyan-400" />
-                        {playlist.name}
-                      </button>
-                    ))}
+                    {playlists.length > 0 ? (
+                      <>
+                        {playlists.map((playlist) => (
+                          <button
+                            key={playlist.id}
+                            onClick={() => {
+                              const libraryTrack = convertToLibraryTrack(currentTrack);
+                              addTrackToPlaylist(playlist.id, libraryTrack);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm text-white hover:bg-purple-500/20 hover:text-purple-300 rounded flex items-center gap-2 transition-all duration-300"
+                          >
+                            <ListMusic className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate font-medium">{playlist.name}</div>
+                              <div className="text-xs text-gray-400 truncate">
+                                {playlist.tracks.length} {playlist.tracks.length === 1 ? 'canción' : 'canciones'}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                        <div className="border-t border-purple-500/20 my-1"></div>
+                      </>
+                    ) : null}
+                    <button
+                      onClick={() => {
+                        const libraryTrack = convertToLibraryTrack(currentTrack);
+                        const newPlaylist = createPlaylist(`Nueva Playlist ${playlists.length + 1}`);
+                        addTrackToPlaylist(newPlaylist.id, libraryTrack);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-purple-300 hover:bg-purple-500/20 hover:text-purple-200 rounded flex items-center gap-2 transition-all duration-300"
+                    >
+                      <ListMusic className="w-4 h-4 text-purple-400" />
+                      Crear nueva playlist
+                    </button>
                   </div>
                 </PopoverContent>
               </Popover>

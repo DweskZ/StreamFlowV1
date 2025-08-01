@@ -15,10 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 interface TrackCardProps {
-  track: Track;
-  onPlay: (track: Track) => void;
-  onAddToQueue: (track: Track) => void;
-  isPlaying?: boolean;
+  readonly track: Track;
+  readonly onPlay: (track: Track) => void;
+  readonly onAddToQueue: (track: Track) => void;
+  readonly isPlaying?: boolean;
 }
 
 const formatDuration = (duration: string): string => {
@@ -29,6 +29,19 @@ const formatDuration = (duration: string): string => {
 };
 
 export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: TrackCardProps) {
+  const { playlists, addTrackToPlaylist, addToLiked, removeFromLiked, isLiked } = useLibrary();
+  
+  const handleAddToPlaylist = (playlistId: string) => {
+    addTrackToPlaylist(playlistId, track);
+  };
+
+  const handleToggleLike = () => {
+    if (isLiked(track.id)) {
+      removeFromLiked(track.id);
+    } else {
+      addToLiked(track);
+    }
+  };
   return (
     <Card className="group bg-black/20 backdrop-blur-sm border-purple-500/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-glow-purple/30">
       <CardContent className="p-3 sm:p-4">
@@ -96,6 +109,7 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
               <span className="hidden sm:inline">Stream</span>
               <span className="sm:hidden">Play</span>
             </Button>
+            
             <Button
               onClick={() => onAddToQueue(track)}
               className="h-7 sm:h-8 px-2 sm:px-3 bg-black/40 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 transition-all text-xs sm:text-sm"
@@ -104,15 +118,74 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
               <span className="hidden sm:inline">Queue</span>
               <span className="sm:hidden">+</span>
             </Button>
+
+            {/* More Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="h-7 sm:h-8 px-2 bg-black/40 border border-gray-500/50 text-gray-400 hover:bg-gray-500/10 hover:text-gray-300 transition-all text-xs sm:text-sm"
+                >
+                  <MoreHorizontal className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="cyber-card border-purple-500/30 backdrop-blur-glass w-48" align="end">
+                <DropdownMenuItem 
+                  onClick={() => onAddToQueue(track)}
+                  className="text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Añadir a la cola
+                </DropdownMenuItem>
+                
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 transition-colors">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Añadir a playlist
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="cyber-card border-purple-500/30 backdrop-blur-glass w-44">
+                    {playlists.length > 0 ? (
+                      playlists.map((playlist) => (
+                        <DropdownMenuItem
+                          key={playlist.id}
+                          onClick={() => handleAddToPlaylist(playlist.id)}
+                          className="text-gray-300 hover:bg-purple-500/10 hover:text-purple-300 transition-colors"
+                        >
+                          <span className="truncate">{playlist.name}</span>
+                          <span className="text-xs text-gray-500 ml-2">({playlist.tracks.length})</span>
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <DropdownMenuItem disabled className="text-gray-500">
+                        <span>No hay playlists</span>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator className="bg-purple-500/20" />
+                
+                <DropdownMenuItem 
+                  onClick={handleToggleLike}
+                  className={`transition-colors ${
+                    isLiked(track.id) 
+                      ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300' 
+                      : 'text-pink-400 hover:bg-pink-500/10 hover:text-pink-300'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 mr-2 ${isLiked(track.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                  {isLiked(track.id) ? 'Quitar de Me gusta' : 'Me gusta'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Tags */}
-        {track.tags && track.tags.genres && track.tags.genres.length > 0 && (
+        {track.tags?.genres?.length ? (
           <div className="mt-3 sm:mt-4 flex flex-wrap gap-1 sm:gap-2">
-            {track.tags.genres.slice(0, 3).map((genre, index) => (
+            {track.tags.genres.slice(0, 3).map((genre) => (
               <span
-                key={index}
+                key={genre}
                 className="text-xs bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 text-purple-300 px-2 sm:px-3 py-1 rounded-full backdrop-blur-sm hover:border-purple-400/50 transition-colors"
               >
                 <Zap className="w-3 h-3 inline mr-1" />
@@ -121,7 +194,7 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
               </span>
             ))}
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

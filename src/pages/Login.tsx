@@ -82,15 +82,34 @@ export default function Login() {
   };
 
   const onSubmitRegister = async (data: RegisterFormData) => {
+    console.log('Register form submitted with data:', { 
+      name: data.name, 
+      email: data.email, 
+      passwordLength: data.password.length 
+    });
+    
     try {
       await signUp(data.email, data.password);
+      console.log('SignUp call completed successfully');
+      
       toast({
         title: "¡Registro exitoso!",
         description: "Revisa tu correo electrónico para confirmar tu cuenta",
       });
+      
+      // Reset form
+      registerForm.reset();
       setActiveTab('login');
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('Register error in onSubmitRegister:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido durante el registro';
+      
+      toast({
+        title: "Error en el registro",
+        description: errorMessage,
+        variant: "destructive"
+      });
     }
   };
 
