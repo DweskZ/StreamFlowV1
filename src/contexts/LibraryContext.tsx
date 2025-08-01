@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useFavorites } from '@/hooks/useFavorites';
 import { Track } from '@/types/music';
 
 export interface Playlist {
@@ -30,18 +31,23 @@ interface LibraryContextValue {
 
 const LibraryContext = createContext<LibraryContextValue | undefined>(undefined);
 
-const LIKED_SONGS_KEY = 'sf_liked_songs';
+// Solo mantenemos las claves para playlists y recently played por ahora
 const PLAYLISTS_KEY = 'sf_playlists';
 const RECENTLY_PLAYED_KEY = 'sf_recently_played';
 
 export const LibraryProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   
-  const [likedSongs, setLikedSongs] = useState<Track[]>(() => {
-    const saved = localStorage.getItem(LIKED_SONGS_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
+  // 🚀 USAR HOOK DE SUPABASE PARA FAVORITOS
+  const { 
+    likedSongs, 
+    addToLiked, 
+    removeFromLiked, 
+    isLiked,
+    loading: favoritesLoading 
+  } = useFavorites();
 
+  // Mantener localStorage para playlists y recently played (por ahora)
   const [playlists, setPlaylists] = useState<Playlist[]>(() => {
     const saved = localStorage.getItem(PLAYLISTS_KEY);
     return saved ? JSON.parse(saved) : [];
@@ -52,11 +58,7 @@ export const LibraryProvider = ({ children }: { children: React.ReactNode }) => 
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Guardar en localStorage cuando cambien los datos
-  useEffect(() => {
-    localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(likedSongs));
-  }, [likedSongs]);
-
+  // Solo guardar playlists y recently played en localStorage (favoritos ya van a Supabase)
   useEffect(() => {
     localStorage.setItem(PLAYLISTS_KEY, JSON.stringify(playlists));
   }, [playlists]);
@@ -65,40 +67,8 @@ export const LibraryProvider = ({ children }: { children: React.ReactNode }) => 
     localStorage.setItem(RECENTLY_PLAYED_KEY, JSON.stringify(recentlyPlayed));
   }, [recentlyPlayed]);
 
-  const addToLiked = useCallback((track: Track) => {
-    setLikedSongs(prev => {
-      if (prev.some(t => t.id === track.id)) {
-        toast({
-          title: 'Ya está en Me gusta',
-          description: 'Esta canción ya está en tus canciones favoritas.',
-          variant: 'destructive'
-        });
-        return prev;
-      }
-      toast({
-        title: 'Añadido a Me gusta',
-        description: `${track.name} - ${track.artist_name}`
-      });
-      return [track, ...prev];
-    });
-  }, [toast]);
-
-  const removeFromLiked = useCallback((trackId: string) => {
-    setLikedSongs(prev => {
-      const track = prev.find(t => t.id === trackId);
-      if (track) {
-        toast({
-          title: 'Eliminado de Me gusta',
-          description: `${track.name} - ${track.artist_name}`
-        });
-      }
-      return prev.filter(t => t.id !== trackId);
-    });
-  }, [toast]);
-
-  const isLiked = useCallback((trackId: string) => {
-    return likedSongs.some(track => track.id === trackId);
-  }, [likedSongs]);
+  // Las funciones de favoritos ya están en el hook useFavorites
+  // addToLiked, removeFromLiked, isLiked vienen del hook
 
   const createPlaylist = useCallback((name: string, description?: string) => {
     const newPlaylist: Playlist = {
