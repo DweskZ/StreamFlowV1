@@ -397,10 +397,7 @@ export default function FixedPlayerBar({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={handlePlay}
             onPause={handlePause}
-            onCanPlay={() => console.log('Audio can start playing')}
-            onLoadStart={() => console.log('Audio loading started')}
             onError={(e) => console.error('Audio error:', e)}
-            onStalled={() => console.warn('Audio stalled')}
             style={{ display: 'none' }}
             preload="auto"
           />
