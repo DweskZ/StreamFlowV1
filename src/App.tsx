@@ -13,8 +13,11 @@ import SearchPage from './pages/SearchPage';
 import LikedSongsPage from './pages/LikedSongsPage';
 import PlaylistPage from './pages/PlaylistPage';
 import StreamFlow from './pages/StreamFlow';
+import PricingPage from './pages/PricingPage';
+import { SubscriptionTest } from './components/subscription/SubscriptionTest';
 import MainLayout from './components/MainLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { PlayerProvider } from './contexts/PlayerContext';
 import { LibraryProvider } from './contexts/LibraryContext';
 
@@ -38,32 +41,36 @@ const PublicLayout = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <PlayerProvider>
-        <LibraryProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route element={<PublicLayout />}>
-                  <Route path="/" element={<Home />} />
-                </Route>
-                <Route element={<ProtectedLayout />}>
-                  <Route path="/app" element={<Dashboard />} />
-                  <Route path="/app/search" element={<SearchPage />} />
-                  <Route path="/app/liked" element={<LikedSongsPage />} />
-                  <Route path="/app/playlist/:playlistId" element={<PlaylistPage />} />
-                  <Route path="/app/streamflow" element={<StreamFlow />} />
-                  <Route path="/profile" element={<Profile />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </LibraryProvider>
-      </PlayerProvider>
+      <SubscriptionProvider>
+        <PlayerProvider>
+          <LibraryProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route element={<PublicLayout />}>
+                    <Route path="/" element={<Home />} />
+                  </Route>
+                  <Route element={<ProtectedLayout />}>
+                    <Route path="/app" element={<Dashboard />} />
+                    <Route path="/app/search" element={<SearchPage />} />
+                    <Route path="/app/liked" element={<LikedSongsPage />} />
+                    <Route path="/app/playlist/:playlistId" element={<PlaylistPage />} />
+                    <Route path="/app/streamflow" element={<StreamFlow />} />
+                    <Route path="/app/pricing" element={<PricingPage />} />
+                    <Route path="/app/test-subscription" element={<SubscriptionTest />} />
+                    <Route path="/profile" element={<Profile />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </LibraryProvider>
+        </PlayerProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
