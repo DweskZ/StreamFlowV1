@@ -16,7 +16,6 @@ interface PlayerContextValue {
   selectTrack: (track: PlaylistTrack) => void;
   nextTrack: () => void;
   prevTrack: () => void;
-  shuffleQueue: () => void;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
   clearQueue: () => void;
@@ -258,17 +257,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, [isShuffleMode, queue, currentTrack, originalQueue, toast]);
 
-  const shuffleQueue = useCallback(() => {
-    if (queue.length <= 1) return;
-    const shuffled = [...queue].sort(() => Math.random() - 0.5);
-    setQueue(shuffled);
-    if (currentTrack) {
-      const newIndex = shuffled.findIndex(t => t.id === currentTrack.id);
-      setCurrentIndex(newIndex);
-    }
-    toast({ title: 'Cola mezclada', description: 'Se reorganizó la cola de reproducción aleatoriamente.' });
-  }, [queue, currentTrack, toast]);
-
   const clearQueue = useCallback(() => {
     setQueue([]);
     setCurrentTrack(null);
@@ -293,7 +281,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     selectTrack, 
     nextTrack, 
     prevTrack, 
-    shuffleQueue,
     toggleRepeat,
     toggleShuffle,
     clearQueue,
@@ -311,7 +298,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     selectTrack, 
     nextTrack, 
     prevTrack, 
-    shuffleQueue,
     toggleRepeat,
     toggleShuffle,
     clearQueue,
