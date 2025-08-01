@@ -9,13 +9,9 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import TrackCard from '@/components/TrackCardNew';
 import { Track } from '@/types/music';
 import { 
-  Play, 
   Heart, 
   PlaySquare, 
-  TrendingUp, 
-  Clock, 
   ChevronRight,
-  Music2,
   Shuffle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
