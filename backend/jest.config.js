@@ -1,6 +1,7 @@
-module.exports = {
+export default {
   preset: 'node',
   testEnvironment: 'node',
+  extensionsToTreatAsEsm: ['.js'],
   testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
   collectCoverageFrom: [
     '**/*.js',
