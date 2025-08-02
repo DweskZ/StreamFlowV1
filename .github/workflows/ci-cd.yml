@@ -33,12 +33,14 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Run ESLint
+      - name: Setup Node.js for ESLint
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
+
+      - name: Run ESLint
         run: |
           npm ci
           npm run lint
@@ -106,8 +108,8 @@ jobs:
         run: npm run build
 
       - name: Test build output
-        run: npm run preview &
         run: |
+          npm run preview &
           sleep 10
           curl -f http://localhost:4173 || exit 1
 
