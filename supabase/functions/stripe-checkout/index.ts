@@ -1,166 +1,231 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@12.0.0'
+import "https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts"
+import Stripe from "https://esm.sh/stripe@14.21.0"
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   apiVersion: '2023-10-16',
 })
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+Deno.serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
 
   try {
-    console.log('Stripe checkout function called')
+    console.log('Function called with method:', req.method);
+
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
+      return new Response('ok', { headers: corsHeaders })
+    }
+
+    if (req.method !== 'POST') {
+      console.log('Method not allowed:', req.method);
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }), 
+        { 
+          status: 405,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('Processing POST request...');
+
+    const bodyText = await req.text();
+    console.log('Raw request body:', bodyText);
     
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
-
-    // Get the user from the request
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser()
-
-    if (userError || !user) {
-      console.error('User authentication error:', userError)
-      throw new Error('User not authenticated')
+    let requestData;
+    try {
+      requestData = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    console.log('User authenticated:', user.id)
+    const { priceId, userId, successUrl, cancelUrl } = requestData;
+    console.log('Received request:', { priceId, userId, successUrl, cancelUrl });
 
-    const { planId, successUrl, cancelUrl } = await req.json()
-    console.log('Request data:', { planId, successUrl, cancelUrl })
-
-    if (!planId) {
-      throw new Error('Plan ID is required')
+    if (!priceId || !userId) {
+      console.log('Missing required fields');
+      return new Response(
+        JSON.stringify({ error: 'Missing priceId or userId' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    // Get plan details from database
-    console.log('Fetching plan with ID:', planId)
-    const { data: plan, error: planError } = await supabaseClient
-      .from('subscription_plans')
-      .select('*')
-      .eq('id', planId)
-      .single()
-
-    if (planError) {
-      console.error('Plan fetch error:', planError)
-      throw new Error(`Plan fetch error: ${planError.message}`)
-    }
-
-    if (!plan) {
-      console.error('Plan not found for ID:', planId)
-      throw new Error('Plan not found')
-    }
-
-    console.log('Plan found:', { id: plan.id, name: plan.name, price: plan.price })
-
-    if (!plan.stripe_price_id) {
-      throw new Error('Plan does not have a Stripe price ID configured')
-    }
-
-    // Get or create Stripe customer
-    console.log('Checking existing subscription for user:', user.id)
-    let { data: subscription, error: subError } = await supabaseClient
-      .from('user_subscriptions')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (subError && subError.code !== 'PGRST116') {
-      console.error('Subscription fetch error:', subError)
-    }
-
-    let customerId = subscription?.stripe_customer_id
-
-    if (!customerId) {
-      console.log('Creating new Stripe customer for user:', user.id)
-      // Create new Stripe customer
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          supabase_user_id: user.id,
-        },
-      })
-      customerId = customer.id
-      console.log('Stripe customer created:', customerId)
-
-      // Save customer ID to database
-      const { error: upsertError } = await supabaseClient
-        .from('user_subscriptions')
-        .upsert({
-          user_id: user.id,
-          subscription_plan_id: planId,
-          stripe_customer_id: customerId,
-          status: 'incomplete',
-        })
-
-      if (upsertError) {
-        console.error('Error saving customer ID:', upsertError)
-      }
-    } else {
-      console.log('Using existing customer:', customerId)
-    }
-
-    // Create checkout session
-    console.log('Creating Stripe checkout session')
+    console.log('Creating checkout session...');
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
+      customer_email: 'test@example.com',
       line_items: [
         {
-          price: plan.stripe_price_id,
+          price: priceId,
           quantity: 1,
         },
       ],
-      mode: plan.interval_type === 'one_time' ? 'payment' : 'subscription',
-      success_url: successUrl || `${req.headers.get('origin')}/app/payment-success?success=true`,
-      cancel_url: cancelUrl || `${req.headers.get('origin')}/app/pricing?canceled=true`,
-      metadata: {
-        user_id: user.id,
-        plan_id: planId,
-      },
-      subscription_data: plan.interval_type !== 'one_time' ? {
-        metadata: {
-          user_id: user.id,
-          plan_id: planId,
-        },
-      } : undefined,
+      mode: 'subscription',
+      success_url: successUrl || 'http://localhost:8080/profile?success=true',
+      cancel_url: cancelUrl || 'http://localhost:8080/pricing?canceled=true',
     })
 
-    console.log('Checkout session created:', session.id)
+    console.log('Checkout session created:', session.id);
 
     return new Response(
-      JSON.stringify({ sessionId: session.id, url: session.url }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      JSON.stringify({ url: session.url }),
+      { 
         status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
+
   } catch (error) {
-    console.error('Error in stripe-checkout function:', error)
+    console.error('Error creating checkout session:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
-}) 
+})
+
+Deno.serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
+
+  try {
+    console.log('Function called with method:', req.method);
+    console.log('Function called with URL:', req.url);
+
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+      console.log('Handling OPTIONS request');
+      return new Response('ok', { headers: corsHeaders })
+    }
+
+    if (req.method !== 'POST') {
+      console.log('Method not allowed:', req.method);
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }), 
+        { 
+          status: 405,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('Processing POST request...');
+
+    const bodyText = await req.text();
+    console.log('Raw request body:', bodyText);
+    
+    let requestData;
+    try {
+      requestData = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    const { priceId, userId, successUrl, cancelUrl } = requestData;
+    console.log('Received request:', { priceId, userId, successUrl, cancelUrl });
+
+    if (!priceId || !userId) {
+      console.log('Missing required fields');
+      return new Response(
+        JSON.stringify({ error: 'Missing priceId or userId' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Usar service role key para consultas de base de datos
+    // const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    console.log('Skipping user lookup for debugging...');
+    // Simular un usuario válido para debugging
+    const user = {
+      id: userId,
+      email: 'test@example.com' // Email por defecto para testing
+    };
+
+    console.log('Creating Stripe checkout session...');
+    
+    // Verificar que Stripe esté configurado
+    if (!Deno.env.get('STRIPE_SECRET_KEY')) {
+      console.error('STRIPE_SECRET_KEY not found');
+      return new Response(
+        JSON.stringify({ error: 'Stripe not configured' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
+    console.log('Stripe key exists, creating session...');
+    
+    // Simplificar la sesión de Stripe al mínimo
+    const session = await stripe.checkout.sessions.create({
+      customer_email: user.email,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: successUrl || 'http://localhost:8080/profile?success=true',
+      cancel_url: cancelUrl || 'http://localhost:8080/pricing?canceled=true',
+    })
+
+    console.log('Checkout session created:', session.id);
+
+    return new Response(
+      JSON.stringify({ url: session.url }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+  }
+})

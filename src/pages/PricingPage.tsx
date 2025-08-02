@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useStripeCheckout } from '@/hooks/useStripeIntegration';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Zap, Star } from 'lucide-react';
+import { Check, Crown, Zap, Star, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PricingPage = () => {
   const navigate = useNavigate();
-  const { availablePlans, currentPlan, upgradeToPlan } = useSubscription();
+  const { availablePlans, currentPlan } = useSubscription();
+  const { createCheckoutSession, loading: stripeLoading, error: stripeError } = useStripeCheckout();
 
   // Filtrar y organizar planes
   const freePlan = availablePlans.find(p => p.name === 'free');
@@ -22,12 +24,30 @@ const PricingPage = () => {
     annualPlan
   ].filter(Boolean);
 
-  const handleUpgrade = async (planId: string) => {
-    try {
-      await upgradeToPlan(planId);
-      // Implementaremos Stripe en el siguiente paso
-    } catch (error) {
-      console.error('Error upgrading plan:', error);
+  const handleUpgrade = async (plan: any) => {
+    console.log('handleUpgrade called with plan:', plan);
+    
+    // Si es el plan gratuito, simplemente navegar
+    if (plan.name === 'free') {
+      navigate('/');
+      return;
+    }
+
+    // Para planes premium, usar Stripe
+    if (plan.stripe_price_id) {
+      console.log('Creating checkout session with price ID:', plan.stripe_price_id);
+      try {
+        const result = await createCheckoutSession({
+          priceId: plan.stripe_price_id,
+          successUrl: `${window.location.origin}/profile?success=true`,
+          cancelUrl: `${window.location.origin}/pricing?canceled=true`
+        });
+        console.log('Checkout session result:', result);
+      } catch (error) {
+        console.error('Error creating checkout session:', error);
+      }
+    } else {
+      console.error('No stripe_price_id found for plan:', plan);
     }
   };
 
@@ -164,7 +184,7 @@ const PricingPage = () => {
 
                   {/* CTA Button */}
                   <Button
-                    onClick={() => !isCurrent && handleUpgrade(plan.id)}
+                    onClick={() => !isCurrent && handleUpgrade(plan)}
                     disabled={isCurrent}
                     variant={getButtonVariant(plan)}
                     size="lg"
