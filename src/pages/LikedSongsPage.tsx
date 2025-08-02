@@ -24,12 +24,7 @@ import { cn } from '@/lib/utils';
 
 const LikedSongsPage = () => {
   const { likedSongs, removeFromLiked, addToRecentlyPlayed } = useLibrary();
-  const { playTrack: playerPlayTrack, addToQueue, queue, currentTrack } = usePlayer();
-
-  const playTrack = useCallback((track: Track) => {
-    addToRecentlyPlayed(track);
-    playerPlayTrack(track);
-  }, [addToRecentlyPlayed, playerPlayTrack]);
+  const { playTrack: playerPlayTrack, playFromContext, addToQueue, currentTrack } = usePlayer();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSongs = likedSongs.filter(track =>
@@ -38,19 +33,30 @@ const LikedSongsPage = () => {
     track.album_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const playTrack = useCallback((track: Track, index?: number) => {
+    addToRecentlyPlayed(track);
+    
+    // Si se proporciona un índice, reproducir desde el contexto de la lista filtrada
+    if (typeof index === 'number') {
+      playFromContext(track, filteredSongs, index);
+    } else {
+      // Reproducción individual (sin contexto)
+      playerPlayTrack(track);
+    }
+  }, [addToRecentlyPlayed, playerPlayTrack, playFromContext, filteredSongs]);
+
   const playAllSongs = () => {
     if (filteredSongs.length > 0) {
-      playTrack(filteredSongs[0]);
-      // Add rest to queue
-      filteredSongs.slice(1).forEach(track => addToQueue(track));
+      // Reproducir la primera canción con contexto completo
+      playTrack(filteredSongs[0], 0);
     }
   };
 
   const shufflePlayAll = () => {
     if (filteredSongs.length > 0) {
       const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
-      playTrack(shuffled[0]);
-      shuffled.slice(1).forEach(track => addToQueue(track));
+      // Reproducir desde la lista mezclada
+      playFromContext(shuffled[0], shuffled, 0);
     }
   };
 
@@ -169,7 +175,7 @@ const LikedSongsPage = () => {
                         />
                         <div className="absolute inset-0 bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                           <Button
-                            onClick={() => playTrack(track)}
+                            onClick={() => playTrack(track, index)}
                             className="h-8 w-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-full shadow-glow-purple transition-all duration-200 hover:scale-110"
                           >
                             <Play className="h-3 w-3 fill-current text-white ml-0.5" />

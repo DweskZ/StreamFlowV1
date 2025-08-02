@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 import type { DeezerTrack, PlaylistTrack } from '@/hooks/useDeezerAPI';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Heart, MoreHorizontal, Volume2, VolumeX, Volume1, Monitor, ListMusic, Shuffle, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
+import { Heart, MoreHorizontal, Volume2, VolumeX, Volume1, Monitor, ListMusic, Shuffle, SkipBack, SkipForward, Play, Pause, Repeat, Zap } from 'lucide-react';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Track } from '@/types/music';
@@ -14,6 +14,13 @@ interface FixedPlayerBarProps {
   readonly onPlay?: () => void;
   readonly onPause?: () => void;
   readonly onPrevious?: () => void;
+  readonly onNext?: () => void;
+  readonly isRepeatMode?: boolean;
+  readonly isShuffleMode?: boolean;
+  readonly autoPlayEnabled?: boolean;
+  readonly onToggleRepeat?: () => void;
+  readonly onToggleShuffle?: () => void;
+  readonly onToggleAutoPlay?: () => void;
 }
 
 export default function FixedPlayerBar({ 
@@ -21,7 +28,14 @@ export default function FixedPlayerBar({
   onEnded, 
   onPlay, 
   onPause, 
-  onPrevious 
+  onPrevious,
+  onNext,
+  isRepeatMode = false,
+  isShuffleMode = false,
+  autoPlayEnabled = false,
+  onToggleRepeat,
+  onToggleShuffle,
+  onToggleAutoPlay
 }: FixedPlayerBarProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isReady, setIsReady] = useState(false);
@@ -30,7 +44,7 @@ export default function FixedPlayerBar({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const { addToLiked, removeFromLiked, likedSongs, playlists, addTrackToPlaylist } = useLibrary();
+  const { addToLiked, removeFromLiked, likedSongs, playlists, addTrackToPlaylist, createPlaylist } = useLibrary();
   const { user } = useAuth();
 
   const isAuthenticated = !!user;
@@ -78,9 +92,38 @@ export default function FixedPlayerBar({
   useEffect(() => {
     if (currentTrack && audioRef.current) {
       setIsReady(false);
-      setTimeout(() => setIsReady(true), 100);
+      setCurrentTime(0);
+      setDuration(0);
+      
+      // Cargar inmediatamente sin delay artificial
+      audioRef.current.load();
+      setIsReady(true);
+      
+      // Solo intentar reproducción automática si está habilitada
+      if (autoPlayEnabled) {
+        const attemptAutoplay = async () => {
+          try {
+            if (audioRef.current) {
+              await audioRef.current.play();
+              setIsPlaying(true);
+              onPlay?.();
+            }
+          } catch (error) {
+            // Autoplay fue bloqueado por políticas del navegador
+            // El usuario deberá hacer click en play manualmente
+            console.warn('Autoplay was prevented by browser policy:', error);
+            setIsPlaying(false);
+          }
+        };
+        
+        // Pequeño delay para asegurar que el audio se haya cargado
+        setTimeout(attemptAutoplay, 50);
+      } else {
+        // Si la reproducción automática está deshabilitada, solo cargar el audio
+        setIsPlaying(false);
+      }
     }
-  }, [currentTrack]);
+  }, [currentTrack, onPlay]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -135,16 +178,21 @@ export default function FixedPlayerBar({
     }
   };
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (audioRef.current) {
-      if (audioRef.current.paused) {
-        audioRef.current.play();
-        setIsPlaying(true);
-        onPlay?.();
-      } else {
-        audioRef.current.pause();
+      try {
+        if (audioRef.current.paused) {
+          await audioRef.current.play();
+          setIsPlaying(true);
+          onPlay?.();
+        } else {
+          audioRef.current.pause();
+          setIsPlaying(false);
+          onPause?.();
+        }
+      } catch (error) {
+        console.warn('Error toggling play/pause:', error);
         setIsPlaying(false);
-        onPause?.();
       }
     }
   };
@@ -221,22 +269,43 @@ export default function FixedPlayerBar({
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-48 cyber-card border-purple-500/30 backdrop-blur-xl" side="top" align="start">
+                <PopoverContent className="w-64 cyber-card border-purple-500/30 backdrop-blur-xl" side="top" align="start">
                   <div className="space-y-1">
                     <div className="px-3 py-2 text-xs font-medium text-gray-400 border-b border-purple-500/20">Agregar a playlist</div>
-                    {playlists.map((playlist) => (
-                      <button
-                        key={playlist.id}
-                        onClick={() => {
-                          const libraryTrack = convertToLibraryTrack(currentTrack);
-                          addTrackToPlaylist(playlist.id, libraryTrack);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-white hover:bg-purple-500/20 hover:text-purple-300 rounded flex items-center gap-2 transition-all duration-300"
-                      >
-                        <ListMusic className="w-4 h-4 text-cyan-400" />
-                        {playlist.name}
-                      </button>
-                    ))}
+                    {playlists.length > 0 ? (
+                      <>
+                        {playlists.map((playlist) => (
+                          <button
+                            key={playlist.id}
+                            onClick={() => {
+                              const libraryTrack = convertToLibraryTrack(currentTrack);
+                              addTrackToPlaylist(playlist.id, libraryTrack);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm text-white hover:bg-purple-500/20 hover:text-purple-300 rounded flex items-center gap-2 transition-all duration-300"
+                          >
+                            <ListMusic className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate font-medium">{playlist.name}</div>
+                              <div className="text-xs text-gray-400 truncate">
+                                {playlist.tracks.length} {playlist.tracks.length === 1 ? 'canción' : 'canciones'}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                        <div className="border-t border-purple-500/20 my-1"></div>
+                      </>
+                    ) : null}
+                    <button
+                      onClick={async () => {
+                        const libraryTrack = convertToLibraryTrack(currentTrack);
+                        const newPlaylist = await createPlaylist(`Nueva Playlist ${playlists.length + 1}`);
+                        addTrackToPlaylist(newPlaylist.id, libraryTrack);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-purple-300 hover:bg-purple-500/20 hover:text-purple-200 rounded flex items-center gap-2 transition-all duration-300"
+                    >
+                      <ListMusic className="w-4 h-4 text-purple-400" />
+                      Crear nueva playlist
+                    </button>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -251,8 +320,13 @@ export default function FixedPlayerBar({
             <div className="flex items-center justify-center gap-2">
               <Button 
                 size="icon" 
-                variant="ghost" 
-                className="h-8 w-8 rounded-full text-gray-400 hover:text-purple-400 hover:shadow-glow-purple transition-all duration-300"
+                variant="ghost"
+                onClick={onToggleShuffle}
+                className={`h-8 w-8 rounded-full transition-all duration-300 ${
+                  isShuffleMode 
+                    ? 'text-purple-400 hover:text-purple-300 shadow-glow-purple' 
+                    : 'text-gray-400 hover:text-purple-400 hover:shadow-glow-purple'
+                }`}
               >
                 <Shuffle className="h-4 w-4" />
               </Button>
@@ -280,10 +354,37 @@ export default function FixedPlayerBar({
               <Button 
                 size="icon" 
                 variant="ghost" 
-                onClick={onEnded}
+                onClick={onNext}
                 className="h-8 w-8 rounded-full text-gray-400 hover:text-purple-400 hover:shadow-glow-purple transition-all duration-300"
               >
                 <SkipForward className="h-4 w-4" />
+              </Button>
+              
+              <Button 
+                size="icon" 
+                variant="ghost"
+                onClick={onToggleRepeat}
+                className={`h-8 w-8 rounded-full transition-all duration-300 ${
+                  isRepeatMode 
+                    ? 'text-cyan-400 hover:text-cyan-300 shadow-glow-cyan' 
+                    : 'text-gray-400 hover:text-cyan-400 hover:shadow-glow-cyan'
+                }`}
+              >
+                <Repeat className="h-4 w-4" />
+              </Button>
+              
+              <Button 
+                size="icon" 
+                variant="ghost"
+                onClick={onToggleAutoPlay}
+                className={`h-8 w-8 rounded-full transition-all duration-300 ${
+                  autoPlayEnabled 
+                    ? 'text-green-400 hover:text-green-300 shadow-glow-green' 
+                    : 'text-gray-400 hover:text-green-400 hover:shadow-glow-green'
+                }`}
+                title={autoPlayEnabled ? 'Desactivar reproducción automática' : 'Activar reproducción automática'}
+              >
+                <Zap className="h-4 w-4" />
               </Button>
             </div>
             
@@ -319,7 +420,9 @@ export default function FixedPlayerBar({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={handlePlay}
             onPause={handlePause}
+            onError={(e) => console.error('Audio error:', e)}
             style={{ display: 'none' }}
+            preload="auto"
           />
         </div>
 
@@ -408,6 +511,10 @@ export default function FixedPlayerBar({
             hsl(0, 0%, 30%) ${(isMuted ? 0 : volume) * 100}%, 
             hsl(0, 0%, 30%) 100%);
           transition: all 0.3s ease;
+        }
+
+        .shadow-glow-green {
+          box-shadow: 0 0 20px hsl(142, 76%, 36% / 0.5);
         }
 
         .volume-slider::-webkit-slider-thumb {

@@ -38,7 +38,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function Login() {
-  const { signIn, signUp, loading, user, resetPassword, signInWithGoogle, signInWithGithub } = useAuth();
+  const { signIn, signUp, loading, user, resetPassword, signInWithGoogle, signInWithGithub, checkIsAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -63,34 +63,76 @@ export default function Login() {
     defaultValues: { email: '' }
   });
 
+  // Verificar si el usuario ya está logueado y redirigir apropiadamente
   if (user) {
-    navigate('/app');
+    // Verificar si es admin
+    const checkAdminAndRedirect = async () => {
+      try {
+        const isAdmin = await checkIsAdmin(user.id);
+        if (isAdmin) {
+          navigate('/admin');
+        } else {
+          navigate('/app');
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        navigate('/app'); // Fallback a app normal
+      }
+    };
+    
+    checkAdminAndRedirect();
     return null;
   }
 
   const onSubmitLogin = async (data: LoginFormData) => {
     try {
-      await signIn(data.email, data.password);
-      toast({
-        title: "¡Bienvenido de vuelta!",
-        description: "Has iniciado sesión correctamente",
-      });
-      navigate('/app');
+      console.log('🔐 Intentando login con:', data.email);
+      const result = await signIn(data.email, data.password);
+      console.log('✅ Login exitoso, resultado:', result);
+      
+      // Verificar si es admin y redirigir apropiadamente
+      if (result?.isAdmin) {
+        console.log('🎯 Usuario es admin, redirigiendo a /admin');
+        navigate('/admin');
+      } else {
+        console.log('🎯 Usuario normal, redirigiendo a /app');
+        navigate('/app');
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
+      // No necesitamos mostrar toast aquí porque ya se maneja en AuthContext
     }
   };
 
   const onSubmitRegister = async (data: RegisterFormData) => {
+    console.log('Register form submitted with data:', { 
+      name: data.name, 
+      email: data.email, 
+      passwordLength: data.password.length 
+    });
+    
     try {
       await signUp(data.email, data.password);
+      console.log('SignUp call completed successfully');
+      
       toast({
         title: "¡Registro exitoso!",
         description: "Revisa tu correo electrónico para confirmar tu cuenta",
       });
+      
+      // Reset form
+      registerForm.reset();
       setActiveTab('login');
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('Register error in onSubmitRegister:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido durante el registro';
+      
+      toast({
+        title: "Error en el registro",
+        description: errorMessage,
+        variant: "destructive"
+      });
     }
   };
 
