@@ -4,7 +4,10 @@ import TrackCard from '@/components/TrackCard';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Music, Play, Zap, Headphones } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Music, Play, Zap, Headphones, Crown, Star, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { PLANS } from '@/types/subscription';
 import useTrendingSongs from '@/hooks/useTrendingSongs';
 
 export default function Home() {
@@ -16,6 +19,10 @@ export default function Home() {
       search(query.trim());
     }
   }, [search]);
+
+  const getPeriodLabel = (planId: string) => {
+    return planId.includes('annual') ? '/año' : '/mes';
+  };
 
   const artistsMap = new Map<string, { name: string; image: string }>();
   tracks.forEach(t => {
@@ -117,7 +124,7 @@ export default function Home() {
             )}
             
             <div className="space-y-3 sm:space-y-4">
-              {tracks.map((track, index) => (
+              {tracks.slice(0, 6).map((track, index) => (
                 <div 
                   key={track.id}
                   className="cyber-card p-3 sm:p-4 hover-glow transition-all duration-300"
@@ -134,6 +141,103 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Subscription Plans Section */}
+          <div>
+            <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full" />
+              <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                Experiencia Premium
+              </h3>
+              <div className="flex-1 h-px bg-gradient-to-r from-yellow-500/50 to-transparent" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              {PLANS.map((plan, index) => (
+                <div 
+                  key={plan.id}
+                  className={`
+                    cyber-card p-4 sm:p-5 text-center hover-glow transition-all duration-300
+                    ${plan.id === 'premium_monthly' ? 'ring-2 ring-yellow-500/50 relative' : ''}
+                  `}
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  {plan.id === 'premium_monthly' && (
+                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold text-xs">
+                      <Star className="w-3 h-3 mr-1" />
+                      POPULAR
+                    </Badge>
+                  )}
+                  
+                  <div className="mb-4">
+                    <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${
+                      plan.id === 'free' 
+                        ? 'bg-gradient-to-br from-gray-600 to-gray-800' 
+                        : 'bg-gradient-to-br from-yellow-500 to-orange-600'
+                    }`}>
+                      {plan.id === 'free' ? (
+                        <Zap className="w-6 h-6 text-white" />
+                      ) : (
+                        <Crown className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                    
+                    <h4 className="text-lg font-bold text-white mb-2">{plan.name}</h4>
+                    
+                    <div className="mb-3">
+                      <span className="text-2xl font-bold text-white">
+                        ${plan.price}
+                      </span>
+                      <span className="text-gray-400 text-sm ml-1">
+                        {plan.id === 'free' ? '' : getPeriodLabel(plan.id)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    {plan.features.slice(0, 2).map((feature) => (
+                      <div key={feature} className="flex items-center gap-2 text-xs">
+                        <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
+                        <span className="text-gray-300">{feature}</span>
+                      </div>
+                    ))}
+                    {plan.features.length > 2 && (
+                      <div className="text-xs text-gray-500">
+                        +{plan.features.length - 2} más
+                      </div>
+                    )}
+                  </div>
+
+                  <Button 
+                    asChild 
+                    size="sm"
+                    className={`w-full ${
+                      plan.id === 'free' 
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                        : 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-black font-bold'
+                    } transition-all duration-300`}
+                  >
+                    <Link to={plan.id === 'free' ? '/login' : '/app/pricing'}>
+                      {plan.id === 'free' ? 'Gratis' : 'Actualizar'}
+                    </Link>
+                  </Button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="text-center mt-6">
+              <Button 
+                asChild 
+                variant="outline" 
+                size="sm"
+                className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+              >
+                <Link to="/app/pricing">
+                  Ver detalles completos
+                </Link>
+              </Button>
+            </div>
+          </div>
+
           {/* Artists Section */}
           {artists.length > 0 && (
             <div>
@@ -146,9 +250,9 @@ export default function Home() {
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-                {artists.map((artist, idx) => (
+                {artists.map((artist) => (
                   <div 
-                    key={idx} 
+                    key={artist.name} 
                     className="group cursor-pointer"
                   >
                     <div className="cyber-card p-3 sm:p-4 text-center hover-glow transition-all duration-300 group-hover:scale-105">

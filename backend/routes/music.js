@@ -307,4 +307,115 @@ router.get('/album/:id/tracks', async (req, res) => {
   }
 });
 
+// ===== ENDPOINTS PARA RECOMENDACIONES =====
+
+// Búsqueda por género - GET /api/recommendations/genre/:genre
+router.get('/recommendations/genre/:genre', async (req, res) => {
+  try {
+    const { genre } = req.params;
+    const { limit = 10 } = req.query;
+    
+    console.log(`🎵 Buscando canciones de género: ${genre}`);
+    
+    const response = await axios.get(`${DEEZER_BASE_URL}/search`, {
+      params: {
+        q: `genre:"${genre}"`,
+        limit: Math.min(parseInt(limit), 25)
+      }
+    });
+
+    const transformedTracks = response.data.data.map(transformDeezerTrack);
+
+    res.json({
+      headers: {
+        status: "success",
+        code: 200,
+        error_message: "",
+        warnings: "",
+        results_fullcount: response.data.total || transformedTracks.length
+      },
+      results: transformedTracks
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error buscando género ${req.params.genre}:`, error.message);
+    res.status(500).json({
+      error: 'Error al buscar canciones por género',
+      message: error.message
+    });
+  }
+});
+
+// Búsqueda por artista - GET /api/recommendations/artist/:artist
+router.get('/recommendations/artist/:artist', async (req, res) => {
+  try {
+    const { artist } = req.params;
+    const { limit = 10 } = req.query;
+    
+    console.log(`🎤 Buscando canciones del artista: ${artist}`);
+    
+    const response = await axios.get(`${DEEZER_BASE_URL}/search`, {
+      params: {
+        q: `artist:"${artist}"`,
+        limit: Math.min(parseInt(limit), 25)
+      }
+    });
+
+    const transformedTracks = response.data.data.map(transformDeezerTrack);
+
+    res.json({
+      headers: {
+        status: "success",
+        code: 200,
+        error_message: "",
+        warnings: "",
+        results_fullcount: response.data.total || transformedTracks.length
+      },
+      results: transformedTracks
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error buscando artista ${req.params.artist}:`, error.message);
+    res.status(500).json({
+      error: 'Error al buscar canciones del artista',
+      message: error.message
+    });
+  }
+});
+
+// Tendencias globales - GET /api/recommendations/trending
+router.get('/recommendations/trending', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    
+    console.log(`📈 Obteniendo tendencias globales`);
+    
+    const response = await axios.get(`${DEEZER_BASE_URL}/chart/0/tracks`, {
+      params: {
+        limit: Math.min(parseInt(limit), 25)
+      }
+    });
+
+    const transformedTracks = response.data.data.map(transformDeezerTrack);
+
+    res.json({
+      headers: {
+        status: "success",
+        code: 200,
+        error_message: "",
+        warnings: "",
+        results_fullcount: response.data.total || transformedTracks.length
+      },
+      results: transformedTracks
+    });
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo tendencias:', error.message);
+    res.status(500).json({
+      error: 'Error al obtener tendencias',
+      message: error.message
+    });
+  }
+});
+
 export default router;

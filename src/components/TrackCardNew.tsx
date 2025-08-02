@@ -8,11 +8,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import PlaylistMenu from './PlaylistMenu';
 
 interface TrackCardProps {
   track: Track;
@@ -22,7 +20,7 @@ interface TrackCardProps {
 }
 
 export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: TrackCardProps) {
-  const { addToLiked, removeFromLiked, isLiked, playlists, addTrackToPlaylist } = useLibrary();
+  const { addToLiked, removeFromLiked, isLiked } = useLibrary();
   const trackIsLiked = isLiked(track.id);
 
   const handleLikeToggle = (e: React.MouseEvent) => {
@@ -131,31 +129,10 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
                   Añadir a la cola
                 </DropdownMenuItem>
                 
-                {playlists.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator className="bg-purple-500/30" />
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Añadir a playlist
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="bg-black/90 backdrop-blur-sm border-purple-500/30">
-                        {playlists.map((playlist) => (
-                          <DropdownMenuItem
-                            key={playlist.id}
-                            className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addTrackToPlaylist(playlist.id, track);
-                            }}
-                          >
-                            {playlist.name}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                  </>
-                )}
+                <DropdownMenuSeparator className="bg-purple-500/30" />
+                <div className="relative">
+                  <PlaylistMenu track={track} />
+                </div>
                 
                 <DropdownMenuSeparator className="bg-purple-500/30" />
                 <DropdownMenuItem 
