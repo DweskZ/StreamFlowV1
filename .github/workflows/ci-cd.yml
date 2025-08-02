@@ -131,6 +131,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy Backend to Render (Production)
         run: |
           echo "🚀 Triggering Render deployment..."
