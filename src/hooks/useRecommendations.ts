@@ -93,7 +93,7 @@ export const useRecommendations = () => {
   const searchTracksByGenre = useCallback(async (genre: string, limit: number = 10): Promise<Track[]> => {
     try {
       console.log(`🔍 Buscando canciones de género: ${genre}`);
-      const response = await fetch(`http://localhost:3001/api/recommendations/genre/${encodeURIComponent(genre)}?limit=${limit}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/recommendations/genre/${encodeURIComponent(genre)}?limit=${limit}`);
       const data = await response.json();
       
       if (data.results && Array.isArray(data.results)) {
@@ -113,7 +113,7 @@ export const useRecommendations = () => {
   const searchTracksByArtist = useCallback(async (artist: string, limit: number = 10): Promise<Track[]> => {
     try {
       console.log(`🎤 Buscando canciones del artista: ${artist}`);
-      const response = await fetch(`http://localhost:3001/api/recommendations/artist/${encodeURIComponent(artist)}?limit=${limit}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/recommendations/artist/${encodeURIComponent(artist)}?limit=${limit}`);
       const data = await response.json();
       
       if (data.results && Array.isArray(data.results)) {
@@ -133,7 +133,7 @@ export const useRecommendations = () => {
   const getTrendingTracks = useCallback(async (limit: number = 10): Promise<Track[]> => {
     try {
       console.log(`📈 Obteniendo tendencias globales`);
-      const response = await fetch(`http://localhost:3001/api/recommendations/trending?limit=${limit}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/recommendations/trending?limit=${limit}`);
       const data = await response.json();
       
       if (data.results && Array.isArray(data.results)) {
