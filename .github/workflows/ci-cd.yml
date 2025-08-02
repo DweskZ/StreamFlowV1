@@ -10,6 +10,10 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+permissions:
+  security-events: write
+  contents: read
+
 jobs:
   # Security and Code Quality
   security-scan:
@@ -32,8 +36,6 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
-        permissions:
-          security-events: write
 
       - name: Setup Node.js for ESLint
         uses: actions/setup-node@v4
