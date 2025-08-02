@@ -44,10 +44,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
+      - name: Install dependencies for ESLint
+        run: npm install
+
       - name: Run ESLint
-        run: |
-          npm ci
-          npm run lint
+        run: npm run lint
 
   # Backend Testing
   backend-test:
@@ -66,7 +67,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run backend tests
         working-directory: ./backend
@@ -103,7 +104,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run frontend tests
         run: npm test
