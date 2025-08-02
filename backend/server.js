@@ -43,12 +43,23 @@ app.use(express.json());
 app.use('/api', musicRoutes);
 // app.use('/api/user', userRoutes); // Para futuras funcionalidades de usuario
 
+// Health check endpoint for Docker and monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Ruta de prueba
 app.get('/', (req, res) => {
   res.json({ 
     message: 'StreamFlow Backend API',
     status: 'online',
     endpoints: {
+      health: '/health',
       search: '/api/search?q=<query>',
       track: '/api/track/:id',
       chart: '/api/chart'

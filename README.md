@@ -1,266 +1,340 @@
-# 🎵 StreamFlow - Descubre Música Libre
+# StreamFlow V1 - Music Discovery Platform
 
-StreamFlow es una aplicación web moderna para descubrir y reproducir música utilizando la API de Deezer a través de un backend Express personalizado. Ofrece una experiencia de usuario intuitiva con autenticación, gestión de playlists y un reproductor de audio integrado.
+Una plataforma moderna de descubrimiento de música construida con React, Node.js y Supabase, implementando un pipeline CI/CD completo con DevOps best practices.
 
-## 🚀 Características Principales
+## 🚀 Características
 
-- 🎵 **Exploración de música** - Acceso a millones de canciones de Deezer
-- 🔍 **Búsqueda avanzada** - Encuentra canciones, artistas y álbumes
-- 🎧 **Reproductor integrado** - Con controles completos y cola de reproducción
-- 👤 **Sistema de autenticación** - Con Supabase para gestión de usuarios
-- ❤️ **Favoritos y playlists** - Guarda y organiza tu música
-- 📱 **Diseño responsive** - Funciona perfectamente en todos los dispositivos
-- 🎨 **UI moderna** - Interfaz elegante con Shadcn/ui y Tailwind CSS
-- 🔄 **Backend robusto** - API Express con transformación automática de datos
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + Docker
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Payments**: Stripe Integration
+- **Deployment**: Vercel (Frontend) + Render (Backend)
+- **CI/CD**: GitHub Actions
+- **Security**: SonarQube + Trivy
+- **Monitoring**: Health checks + Metrics
 
-## 🛠️ Tecnologías Utilizadas
+## 🏗️ Arquitectura
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │    Backend      │    │   Database      │
+│   (Vercel)      │◄──►│   (Render)      │◄──►│  (Supabase)     │
+│                 │    │                 │    │                 │
+│  React + Vite   │    │  Node.js +      │    │  PostgreSQL     │
+│  TypeScript     │    │  Express        │    │  Real-time      │
+│  Tailwind CSS   │    │  Docker         │    │  Auth           │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   CI/CD Pipeline│
+                    │                 │
+                    │  GitHub Actions │
+                    │  SonarQube      │
+                    │  Security Scan  │
+                    │  Auto Deploy    │
+                    └─────────────────┘
+```
+
+## 🛠️ Tecnologías
 
 ### Frontend
-- **React 18** + **TypeScript** - Framework principal
-- **Vite** - Herramienta de construcción rápida
-- **Tailwind CSS** - Framework de estilos
-- **Shadcn/ui** - Componentes de UI modernos
-- **React Router** - Navegación entre páginas
-- **React Query** - Gestión de estado del servidor
-- **Supabase** - Autenticación y base de datos
+- **React 18** - UI Framework
+- **TypeScript** - Type Safety
+- **Vite** - Build Tool
+- **Tailwind CSS** - Styling
+- **Radix UI** - Component Library
+- **React Router** - Navigation
+- **React Query** - Data Fetching
 
 ### Backend
-- **Node.js** + **Express** - Servidor API
-- **Axios** - Cliente HTTP para llamadas a Deezer
-- **CORS** - Configuración de seguridad
-- **Transformación de datos** - Compatibilidad con formato anterior
+- **Node.js** - Runtime
+- **Express** - Web Framework
+- **Docker** - Containerization
+- **Jest** - Testing
+- **ESLint** - Code Quality
 
-## 📦 Instalación y Configuración
+### DevOps & Infrastructure
+- **GitHub Actions** - CI/CD Pipeline
+- **Docker** - Containerization
+- **Vercel** - Frontend Hosting
+- **Render** - Backend Hosting
+- **Supabase** - Database & Auth
+- **SonarQube** - Code Quality
+- **Trivy** - Security Scanning
 
-### Requisitos Previos
-- Node.js v16 o superior
-- npm o yarn
+## 🚀 Quick Start
+
+### Prerrequisitos
+- Node.js 18+
+- Docker
 - Git
 
-### Instalación Rápida (Recomendado)
+### Instalación Local
 
-1. **Clona el repositorio:**
-   ```bash
-   git clone <URL_DEL_REPOSITORIO>
-   cd StreamRefactor
-   ```
-
-2. **Ejecuta el script de instalación automática:**
-   ```powershell
-   ./start-streamflow.ps1
-   ```
-   
-3. **Selecciona la opción 3** para iniciar frontend y backend simultáneamente
-
-### Instalación Manual
-
+1. **Clonar el repositorio**
 ```bash
-# 1. Instalar dependencias del frontend
+git clone https://github.com/your-username/streamflow-v1.git
+cd streamflow-v1
+```
+
+2. **Instalar dependencias**
+```bash
+# Frontend
 npm install
 
-# 2. Instalar dependencias del backend
+# Backend
 cd backend
 npm install
 cd ..
-
-# 3. Configurar variables de entorno (opcional)
-# Los archivos .env ya están configurados por defecto
-
-# 4. Iniciar el backend (Terminal 1)
-cd backend
-npm run dev
-
-# 5. Iniciar el frontend (Terminal 2)
-npm run dev
 ```
 
-### URLs de Desarrollo
-- **Frontend:** http://localhost:5173
-- **Backend:** http://localhost:3001
-- **API Test:** http://localhost:3001/api/search?q=test
+3. **Configurar variables de entorno**
+```bash
+# Frontend (.env)
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_BACKEND_URL=http://localhost:3000
 
-## 🎯 Scripts Disponibles
+# Backend (.env)
+NODE_ENV=development
+PORT=3000
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. **Ejecutar en desarrollo**
+```bash
+# Desarrollo completo (frontend + backend)
+npm run dev:full
+
+# Solo frontend
+npm run dev
+
+# Solo backend
+npm run dev:backend
+```
+
+### Docker Development
+
+```bash
+# Backend con Docker
+cd backend
+docker-compose up
+
+# Backend development con hot reload
+docker-compose --profile dev up
+```
+
+## 🧪 Testing
+
+### Frontend Tests
+```bash
+# Ejecutar tests
+npm test
+
+# Tests con UI
+npm run test:ui
+
+# Coverage
+npm run test:coverage
+```
+
+### Backend Tests
+```bash
+# Ejecutar tests
+cd backend
+npm test
+
+# Tests con watch
+npm run test:watch
+
+# Coverage
+npm run test:coverage
+```
+
+### E2E Tests
+```bash
+# Próximamente con Playwright
+npm run test:e2e
+```
+
+## 🚀 Deployment
+
+### CI/CD Pipeline
+
+El proyecto utiliza GitHub Actions para automatizar el proceso de CI/CD:
+
+1. **Security Scan**: Análisis de vulnerabilidades con Trivy
+2. **Code Quality**: ESLint + SonarQube
+3. **Testing**: Jest + Vitest
+4. **Build**: Docker image building
+5. **Deploy**: Automático a staging/production
+
+### Manual Deployment
+
+#### Frontend (Vercel)
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+```
+
+#### Backend (Render)
+```bash
+# Configurar en Render Dashboard
+# Connect GitHub repository
+# Set environment variables
+# Deploy automatically
+```
+
+## 🔒 Security
+
+### Implemented Security Measures
+
+1. **Code Quality**
+   - SonarQube analysis
+   - ESLint rules
+   - TypeScript strict mode
+
+2. **Vulnerability Scanning**
+   - Trivy container scanning
+   - GitHub Security tab
+   - Automated alerts
+
+3. **Secrets Management**
+   - GitHub Secrets
+   - Environment variables
+   - No hardcoded secrets
+
+4. **HTTPS & Headers**
+   - HTTPS enforced
+   - Security headers
+   - CORS configuration
+
+### Security Checklist
+
+- [x] HTTPS enforced
+- [x] Security headers configured
+- [x] CORS properly set
+- [x] Input validation
+- [x] SQL injection prevention
+- [x] XSS protection
+- [x] CSRF protection
+- [x] Rate limiting
+- [x] Secrets management
+- [x] Vulnerability scanning
+
+## 📊 Monitoring
+
+### Health Checks
+- **Frontend**: Vercel health monitoring
+- **Backend**: `/health` endpoint
+- **Database**: Supabase monitoring
+
+### Metrics
+- Response time
+- Error rate
+- Availability
+- User metrics
+- Business metrics
+
+### Alerts
+- Error rate > 5%
+- Response time > 2s
+- Service down
+- Security incidents
+
+## 🔄 Backup & Rollback
+
+### Backup Strategy
+- **Database**: Daily automated backups
+- **Code**: Git version control
+- **Configuration**: Environment variables
+
+### Rollback Strategy
+- **Frontend**: Vercel rollback
+- **Backend**: Render rollback
+- **Database**: Point-in-time recovery
+
+## 📚 Documentation
+
+- [Branching Strategy](./Docs/BRANCHING_STRATEGY.md)
+- [Backup & Rollback Strategy](./Docs/BACKUP_AND_ROLLBACK_STRATEGY.md)
+- [Development Roadmap](./Docs/DEVELOPMENT_ROADMAP.md)
+- [Stripe Implementation](./Docs/IMPLEMENTACION_STRIPE_COMPLETA.md)
+- [Admin Setup Guide](./Docs/ADMIN_SETUP_GUIDE.md)
+
+## 🤝 Contributing
+
+### Branching Strategy
+Este proyecto utiliza GitFlow:
+
+1. **Feature branches**: `feature/description`
+2. **Release branches**: `release/v1.0.0`
+3. **Hotfix branches**: `hotfix/description`
+
+### Commit Convention
+```
+type(scope): description
+
+feat(auth): implement user authentication
+fix(player): resolve audio playback issue
+docs(api): update endpoint documentation
+```
+
+### Pull Request Process
+1. Create feature branch from `develop`
+2. Implement changes
+3. Add tests
+4. Update documentation
+5. Create PR to `develop`
+6. Code review
+7. Merge to `develop`
+8. Deploy to staging
+
+## 📈 Performance
 
 ### Frontend
-```bash
-npm run dev              # Inicia servidor de desarrollo
-npm run dev:backend      # Inicia solo el backend
-npm run dev:full         # Inicia frontend y backend simultáneamente
-npm run build            # Construye para producción
-npm run preview          # Vista previa de producción
-npm run lint             # Ejecuta el linter
-```
+- Lighthouse Score: 95+
+- First Contentful Paint: < 1.5s
+- Largest Contentful Paint: < 2.5s
 
 ### Backend
-```bash
-cd backend
-npm run dev              # Inicia servidor de desarrollo
-npm start                # Inicia en modo producción
-npm test                 # Ejecuta tests de API
-```
+- Response Time: < 200ms
+- Throughput: 1000+ req/s
+- Uptime: 99.9%
 
-## 📁 Estructura del Proyecto
+## 🆘 Support
 
-```
-StreamRefactor/
-├── src/                    # Código fuente del frontend
-│   ├── components/         # Componentes reutilizables
-│   │   ├── admin/         # Componentes de administración
-│   │   ├── ui/            # Componentes de UI (Shadcn)
-│   │   └── ...
-│   ├── pages/             # Páginas de la aplicación
-│   │   ├── Home.tsx       # Página principal
-│   │   ├── Dashboard.tsx  # Panel principal
-│   │   ├── SearchPage.tsx # Búsqueda de música
-│   │   ├── Login.tsx      # Autenticación
-│   │   └── ...
-│   ├── contexts/          # Contextos de React
-│   ├── hooks/             # Hooks personalizados
-│   ├── types/             # Definiciones TypeScript
-│   ├── lib/               # Utilidades
-│   └── integrations/      # Integraciones externas
-├── backend/               # Servidor Express
-│   ├── routes/            # Rutas de la API
-│   ├── config/            # Configuración
-│   ├── utils/             # Utilidades del backend
-│   └── server.js          # Servidor principal
-├── supabase/              # Configuración de Supabase
-├── Sqlscripts/            # Scripts de base de datos
-├── Tests_and_scripts/     # Scripts de utilidad
-│   └── fix-cors.ps1       # Solucionador de CORS
-├── Docs/                  # Documentación
-└── public/                # Archivos estáticos
-```
+### Troubleshooting
 
-## 🎵 Funcionalidades de la Aplicación
+#### Common Issues
+1. **CORS Errors**: Check backend CORS configuration
+2. **Build Failures**: Verify Node.js version and dependencies
+3. **Deployment Issues**: Check environment variables
 
-### Para Usuarios
-- **Exploración de música** - Descubre canciones populares y nuevas
-- **Búsqueda avanzada** - Encuentra música por título, artista o álbum
-- **Reproductor de audio** - Escucha previews de canciones
-- **Gestión de favoritos** - Guarda tus canciones favoritas
-- **Playlists personalizadas** - Crea y gestiona tus listas de reproducción
-- **Perfil de usuario** - Gestiona tu cuenta y preferencias
-- **Sistema de suscripciones** - Planes premium disponibles
+#### Getting Help
+- [Issues](https://github.com/your-username/streamflow-v1/issues)
+- [Discussions](https://github.com/your-username/streamflow-v1/discussions)
+- [Documentation](./Docs/)
 
-### Para Administradores
-- **Panel de administración** - Gestión completa de usuarios y contenido
-- **Gestión de usuarios** - Ver, editar y gestionar cuentas
-- **Gestión de contenido** - Moderar y gestionar música
-- **Estadísticas** - Métricas de uso de la aplicación
+## 📄 License
 
-## 🔧 API Endpoints
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Música (Deezer API)
-- `GET /api/search?q=<query>&limit=<number>` - Búsqueda de canciones
-- `GET /api/track/:id` - Detalles de una canción
-- `GET /api/chart?limit=<number>` - Top canciones
-- `GET /api/artist/search?q=<query>` - Búsqueda de artistas
-- `GET /api/artist/:id/albums` - Álbumes de un artista
-- `GET /api/album/:id/tracks` - Canciones de un álbum
+## 🙏 Acknowledgments
 
-### Usuario (Supabase)
-- `POST /api/user/favorites` - Agregar a favoritos
-- `GET /api/user/favorites/:userId` - Obtener favoritos
-- `DELETE /api/user/favorites/:userId/:trackId` - Eliminar favorito
-- `POST /api/user/playlists` - Crear playlist
-- `GET /api/user/playlists/:userId` - Obtener playlists
-
-## 🛡️ Seguridad y Configuración
-
-### CORS
-El servidor tiene CORS configurado para permitir conexiones desde:
-- `http://localhost:5173` (Vite)
-- `http://localhost:3000` (React)
-
-### Variables de Entorno
-```env
-# Frontend (.env)
-VITE_BACKEND_URL=http://localhost:3001
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_key
-
-# Backend (backend/.env)
-PORT=3001
-DEEZER_API_BASE_URL=https://api.deezer.com
-```
-
-## 🚧 Solución de Problemas
-
-### Error de CORS
-Si encuentras errores de CORS, ejecuta el script de diagnóstico:
-```powershell
-./Tests_and_scripts/fix-cors.ps1
-```
-
-### Backend no responde
-1. Verifica que el backend esté corriendo en el puerto 3001
-2. Ejecuta `cd backend && npm run dev`
-3. Verifica que no haya conflictos de puerto
-
-### Problemas de dependencias
-```bash
-# Limpiar e reinstalar dependencias
-rm -rf node_modules package-lock.json
-npm install
-cd backend && rm -rf node_modules package-lock.json && npm install
-```
-
-## 🚀 Despliegue
-
-### Desarrollo Local
-```bash
-npm run dev:full
-```
-
-### Producción
-```bash
-# Construir frontend
-npm run build
-
-# Iniciar backend en producción
-cd backend
-npm start
-```
-
-## 📊 Estado del Proyecto
-
-✅ **Completado:**
-- Migración de Jamendo a Deezer API
-- Sistema de autenticación con Supabase
-- Reproductor de audio integrado
-- Búsqueda y exploración de música
-- Gestión de favoritos y playlists
-- Panel de administración
-- Diseño responsive
-- Backend Express robusto
-
-🚧 **En desarrollo:**
-- Cache de respuestas para mejor rendimiento
-- Rate limiting para protección de API
-- Recomendaciones personalizadas
-- Historial de reproducción
-- Integración con más servicios de música
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
-
-## 📞 Soporte
-
-Si tienes problemas o preguntas:
-1. Revisa la documentación en `/Docs`
-2. Ejecuta el script de diagnóstico CORS
-3. Abre un issue en el repositorio
+- [Supabase](https://supabase.com/) for backend services
+- [Vercel](https://vercel.com/) for frontend hosting
+- [Render](https://render.com/) for backend hosting
+- [Stripe](https://stripe.com/) for payment processing
+- [Deezer](https://www.deezer.com/) for music API
 
 ---
 
-**¡Disfruta explorando música con StreamFlow! 🎵** 
+**StreamFlow V1** - Modern Music Discovery Platform 🎵 

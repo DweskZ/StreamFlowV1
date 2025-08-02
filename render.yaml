@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: streamflow-backend
+    env: docker
+    region: oregon
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    secrets:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+    buildCommand: docker build -t streamflow-backend .
+    startCommand: docker run -p $PORT:3000 streamflow-backend
+    autoDeploy: true 

@@ -1,0 +1,71 @@
+{
+  "monitoring": {
+    "healthChecks": {
+      "frontend": {
+        "url": "https://streamflow-frontend.vercel.app",
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3
+      },
+      "backend": {
+        "url": "https://streamflow-backend.onrender.com/health",
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3
+      },
+      "database": {
+        "url": "https://api.supabase.com/health",
+        "interval": 60,
+        "timeout": 15,
+        "retries": 2
+      }
+    },
+    "alerts": {
+      "errorRate": {
+        "threshold": 5.0,
+        "window": 300,
+        "severity": "critical"
+      },
+      "responseTime": {
+        "threshold": 2000,
+        "window": 60,
+        "severity": "warning"
+      },
+      "availability": {
+        "threshold": 99.9,
+        "window": 3600,
+        "severity": "critical"
+      }
+    },
+    "metrics": {
+      "performance": [
+        "response_time",
+        "throughput",
+        "error_rate",
+        "availability"
+      ],
+      "business": [
+        "active_users",
+        "playlists_created",
+        "tracks_played",
+        "subscriptions"
+      ],
+      "infrastructure": [
+        "cpu_usage",
+        "memory_usage",
+        "disk_usage",
+        "network_io"
+      ]
+    },
+    "logging": {
+      "levels": ["error", "warn", "info", "debug"],
+      "retention": "30d",
+      "format": "json",
+      "destinations": [
+        "console",
+        "file",
+        "external_service"
+      ]
+    }
+  }
+} 
