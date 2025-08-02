@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "streamflow-frontend",
   "builds": [
     {
       "src": "package.json",
@@ -12,10 +11,6 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
@@ -24,10 +19,5 @@
     "VITE_SUPABASE_URL": "@vite_supabase_url",
     "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
     "VITE_BACKEND_URL": "@vite_backend_url"
-  },
-  "functions": {
-    "src/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
   }
 } 
