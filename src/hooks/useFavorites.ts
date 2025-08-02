@@ -97,8 +97,9 @@ export const useFavorites = () => {
 
       console.log(`✅ Migrados ${localTracks.length} favoritos desde localStorage`);
       
-      // Opcional: limpiar localStorage después de migración exitosa
-      // localStorage.removeItem('sf_liked_songs');
+      // Limpiar localStorage después de migración exitosa
+      localStorage.removeItem('sf_liked_songs');
+      console.log('🧹 localStorage de favoritos limpiado');
       
     } catch (err: any) {
       console.error('Error migrando favoritos:', err);

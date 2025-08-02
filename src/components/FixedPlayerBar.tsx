@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 import type { DeezerTrack, PlaylistTrack } from '@/hooks/useDeezerAPI';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Heart, MoreHorizontal, Volume2, VolumeX, Volume1, Monitor, ListMusic, Shuffle, SkipBack, SkipForward, Play, Pause, Repeat } from 'lucide-react';
+import { Heart, MoreHorizontal, Volume2, VolumeX, Volume1, Monitor, ListMusic, Shuffle, SkipBack, SkipForward, Play, Pause, Repeat, Zap } from 'lucide-react';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Track } from '@/types/music';
@@ -17,8 +17,10 @@ interface FixedPlayerBarProps {
   readonly onNext?: () => void;
   readonly isRepeatMode?: boolean;
   readonly isShuffleMode?: boolean;
+  readonly autoPlayEnabled?: boolean;
   readonly onToggleRepeat?: () => void;
   readonly onToggleShuffle?: () => void;
+  readonly onToggleAutoPlay?: () => void;
 }
 
 export default function FixedPlayerBar({ 
@@ -30,8 +32,10 @@ export default function FixedPlayerBar({
   onNext,
   isRepeatMode = false,
   isShuffleMode = false,
+  autoPlayEnabled = false,
   onToggleRepeat,
-  onToggleShuffle
+  onToggleShuffle,
+  onToggleAutoPlay
 }: FixedPlayerBarProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isReady, setIsReady] = useState(false);
@@ -95,24 +99,29 @@ export default function FixedPlayerBar({
       audioRef.current.load();
       setIsReady(true);
       
-      // Intentar reproducir automáticamente cuando se cambia de canción
-      const attemptAutoplay = async () => {
-        try {
-          if (audioRef.current) {
-            await audioRef.current.play();
-            setIsPlaying(true);
-            onPlay?.();
+      // Solo intentar reproducción automática si está habilitada
+      if (autoPlayEnabled) {
+        const attemptAutoplay = async () => {
+          try {
+            if (audioRef.current) {
+              await audioRef.current.play();
+              setIsPlaying(true);
+              onPlay?.();
+            }
+          } catch (error) {
+            // Autoplay fue bloqueado por políticas del navegador
+            // El usuario deberá hacer click en play manualmente
+            console.warn('Autoplay was prevented by browser policy:', error);
+            setIsPlaying(false);
           }
-        } catch (error) {
-          // Autoplay fue bloqueado por políticas del navegador
-          // El usuario deberá hacer click en play manualmente
-          console.warn('Autoplay was prevented by browser policy:', error);
-          setIsPlaying(false);
-        }
-      };
-      
-      // Pequeño delay para asegurar que el audio se haya cargado
-      setTimeout(attemptAutoplay, 50);
+        };
+        
+        // Pequeño delay para asegurar que el audio se haya cargado
+        setTimeout(attemptAutoplay, 50);
+      } else {
+        // Si la reproducción automática está deshabilitada, solo cargar el audio
+        setIsPlaying(false);
+      }
     }
   }, [currentTrack, onPlay]);
 
@@ -363,6 +372,20 @@ export default function FixedPlayerBar({
               >
                 <Repeat className="h-4 w-4" />
               </Button>
+              
+              <Button 
+                size="icon" 
+                variant="ghost"
+                onClick={onToggleAutoPlay}
+                className={`h-8 w-8 rounded-full transition-all duration-300 ${
+                  autoPlayEnabled 
+                    ? 'text-green-400 hover:text-green-300 shadow-glow-green' 
+                    : 'text-gray-400 hover:text-green-400 hover:shadow-glow-green'
+                }`}
+                title={autoPlayEnabled ? 'Desactivar reproducción automática' : 'Activar reproducción automática'}
+              >
+                <Zap className="h-4 w-4" />
+              </Button>
             </div>
             
             {/* Progress Bar */}
@@ -488,6 +511,10 @@ export default function FixedPlayerBar({
             hsl(0, 0%, 30%) ${(isMuted ? 0 : volume) * 100}%, 
             hsl(0, 0%, 30%) 100%);
           transition: all 0.3s ease;
+        }
+
+        .shadow-glow-green {
+          box-shadow: 0 0 20px hsl(142, 76%, 36% / 0.5);
         }
 
         .volume-slider::-webkit-slider-thumb {

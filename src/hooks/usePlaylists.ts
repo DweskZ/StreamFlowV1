@@ -69,10 +69,13 @@ export const usePlaylists = () => {
   // Cargar playlists desde Supabase
   const loadPlaylists = useCallback(async () => {
     if (!user) {
+      console.log('🚫 usePlaylists: No hay usuario autenticado');
       setPlaylists([]);
       setLoading(false);
       return;
     }
+
+    console.log('🔄 usePlaylists: Iniciando carga de playlists para usuario:', user.id);
 
     try {
       setLoading(true);
@@ -85,18 +88,28 @@ export const usePlaylists = () => {
         .eq('user_id', user.id)
         .order('sort_order', { ascending: true });
 
+      console.log('📊 usePlaylists: Datos de playlists obtenidos:', playlistsData);
+      console.log('❌ usePlaylists: Error de playlists:', playlistsError);
+
       if (playlistsError) {
         throw playlistsError;
       }
 
+      console.log('✅ usePlaylists: Playlists cargadas exitosamente:', playlistsData?.length || 0);
+
       // Para cada playlist, cargar sus tracks
       const playlistsWithTracks = await Promise.all(
         (playlistsData || []).map(async (playlistDB: PlaylistFromDB) => {
+          console.log('🎵 usePlaylists: Cargando tracks para playlist:', playlistDB.name, playlistDB.id);
+          
           const { data: tracksData, error: tracksError } = await supabase
             .from('playlist_tracks')
             .select('*')
             .eq('playlist_id', playlistDB.id)
             .order('position', { ascending: true });
+
+          console.log('🎵 usePlaylists: Tracks obtenidos para', playlistDB.name, ':', tracksData?.length || 0);
+          console.log('❌ usePlaylists: Error de tracks para', playlistDB.name, ':', tracksError);
 
           if (tracksError) {
             console.error(`Error loading tracks for playlist ${playlistDB.id}:`, tracksError);
@@ -122,9 +135,10 @@ export const usePlaylists = () => {
         })
       );
 
+      console.log('🎉 usePlaylists: Playlists finales con tracks:', playlistsWithTracks.map(p => ({ name: p.name, tracksCount: p.tracks.length })));
       setPlaylists(playlistsWithTracks);
     } catch (err: any) {
-      console.error('Error loading playlists:', err);
+      console.error('💥 usePlaylists: Error loading playlists:', err);
       setError(err.message);
       
       // Fallback: cargar desde localStorage si hay error
@@ -132,6 +146,7 @@ export const usePlaylists = () => {
       if (savedLocal) {
         try {
           const localPlaylists = JSON.parse(savedLocal);
+          console.log('🔄 usePlaylists: Cargando desde localStorage como fallback:', localPlaylists.length);
           setPlaylists(localPlaylists.map((p: any) => ({
             ...p,
             createdAt: new Date(p.createdAt),
@@ -214,6 +229,10 @@ export const usePlaylists = () => {
       }
 
       console.log(`✅ Migradas ${localPlaylists.length} playlists desde localStorage`);
+      
+      // Limpiar localStorage después de migración exitosa
+      localStorage.removeItem('sf_playlists');
+      console.log('🧹 localStorage de playlists limpiado');
       
     } catch (err: any) {
       console.error('Error migrando playlists:', err);

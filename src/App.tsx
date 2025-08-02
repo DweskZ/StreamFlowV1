@@ -14,6 +14,10 @@ import LikedSongsPage from './pages/LikedSongsPage';
 import PlaylistPage from './pages/PlaylistPage';
 import StreamFlow from './pages/StreamFlow';
 import PricingPage from './pages/PricingPage';
+import PaymentSuccess from './pages/PaymentSuccess';
+import RecommendationsPage from './pages/RecommendationsPage';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminRoute from './components/AdminRoute';
 import { SubscriptionTest } from './components/subscription/SubscriptionTest';
 import MainLayout from './components/MainLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -57,10 +61,13 @@ const App = () => (
                   <Route element={<ProtectedLayout />}>
                     <Route path="/app" element={<Dashboard />} />
                     <Route path="/app/search" element={<SearchPage />} />
-                    <Route path="/app/liked" element={<LikedSongsPage />} />
+                            <Route path="/app/recommendations" element={<RecommendationsPage />} />
+        <Route path="/app/liked" element={<LikedSongsPage />} />
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                     <Route path="/app/playlist/:playlistId" element={<PlaylistPage />} />
                     <Route path="/app/streamflow" element={<StreamFlow />} />
                     <Route path="/app/pricing" element={<PricingPage />} />
+                    <Route path="/app/payment-success" element={<PaymentSuccess />} />
                     <Route path="/app/test-subscription" element={<SubscriptionTest />} />
                     <Route path="/profile" element={<Profile />} />
                   </Route>

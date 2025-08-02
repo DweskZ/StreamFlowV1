@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import FixedPlayerBar from '@/components/FixedPlayerBar';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -15,13 +15,17 @@ export default function MainLayout() {
     prevTrack, 
     isRepeatMode, 
     isShuffleMode, 
+    autoPlayEnabled,
     toggleRepeat, 
-    toggleShuffle 
+    toggleShuffle,
+    toggleAutoPlay
   } = usePlayer();
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
   
   const isAuthenticated = !!user;
+  const isAdminRoute = location.pathname.startsWith('/admin');
   
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -37,30 +41,38 @@ export default function MainLayout() {
         />
       )}
       
-      {/* Fixed Header */}
-      <Header onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+      {/* Fixed Header - hidden for admin routes */}
+      {!isAdminRoute && (
+        <Header onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+      )}
       
-      {/* Fixed Sidebar - only for authenticated users */}
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      {/* Fixed Sidebar - hidden for admin routes */}
+      {!isAdminRoute && (
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      )}
       
-      {/* Main Content with conditional margins and padding for header */}
-      <div className={`${isAuthenticated ? 'lg:ml-64' : ''} pt-16 pb-24 min-h-screen`}>
-        <div className="bg-gradient-to-b from-black/50 via-purple-900/10 to-black min-h-full">
+      {/* Main Content with conditional margins and padding */}
+      <div className={`${isAuthenticated && !isAdminRoute ? 'lg:ml-64' : ''} ${!isAdminRoute ? 'pt-16 pb-24' : 'pt-0 pb-0'} min-h-screen`}>
+        <div className={`min-h-full ${!isAdminRoute ? 'bg-gradient-to-b from-black/50 via-purple-900/10 to-black' : ''}`}>
           <Outlet />
         </div>
       </div>
       
-      {/* Fixed Player Bar */}
-      <FixedPlayerBar 
-        currentTrack={currentTrack} 
-        onEnded={nextTrack}
-        onNext={nextTrack}
-        onPrevious={prevTrack}
-        isRepeatMode={isRepeatMode}
-        isShuffleMode={isShuffleMode}
-        onToggleRepeat={toggleRepeat}
-        onToggleShuffle={toggleShuffle}
-      />
+      {/* Fixed Player Bar - hidden for admin routes */}
+      {!isAdminRoute && (
+        <FixedPlayerBar 
+          currentTrack={currentTrack} 
+          onEnded={nextTrack}
+          onNext={nextTrack}
+          onPrevious={prevTrack}
+          isRepeatMode={isRepeatMode}
+          isShuffleMode={isShuffleMode}
+          autoPlayEnabled={autoPlayEnabled}
+          onToggleRepeat={toggleRepeat}
+          onToggleShuffle={toggleShuffle}
+          onToggleAutoPlay={toggleAutoPlay}
+        />
+      )}
     </div>
   );
 }

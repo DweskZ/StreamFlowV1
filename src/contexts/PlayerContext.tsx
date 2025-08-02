@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { useToast } from '@/hooks/use-toast';
 import { Track, PlaylistTrack } from '@/types/music';
 import { QueueStorage } from '@/lib/QueueStorage';
+import { useListeningHistory } from '@/hooks/useListeningHistory';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PlayerContextValue {
   queue: PlaylistTrack[];
@@ -9,6 +11,7 @@ interface PlayerContextValue {
   currentIndex: number;
   isRepeatMode: boolean;
   isShuffleMode: boolean;
+  autoPlayEnabled: boolean;
   playTrack: (track: Track) => void;
   playFromContext: (track: Track, contextTracks: Track[], startIndex: number) => void;
   addToQueue: (track: Track) => void;
@@ -18,25 +21,27 @@ interface PlayerContextValue {
   prevTrack: () => void;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
+  toggleAutoPlay: () => void;
   clearQueue: () => void;
   onTrackPlay?: (track: Track) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'sf_queue_v1';
-
 export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { recordPlayStart } = useListeningHistory();
   
-  // Cargar estado inicial
-  const initialQueue = QueueStorage.load();
-  const initialState = QueueStorage.loadState();
+  // Cargar estado inicial específico del usuario
+  const initialQueue = QueueStorage.load(user?.id);
+  const initialState = QueueStorage.loadState(user?.id);
   
   const [queue, setQueue] = useState<PlaylistTrack[]>(initialQueue);
   const [currentIndex, setCurrentIndex] = useState(initialState.currentIndex);
   const [isRepeatMode, setIsRepeatMode] = useState(initialState.isRepeatMode);
   const [isShuffleMode, setIsShuffleMode] = useState(initialState.isShuffleMode);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState(initialState.autoPlayEnabled);
   const [originalQueue, setOriginalQueue] = useState<PlaylistTrack[]>([]);
   const [onTrackPlay] = useState<((track: Track) => void) | undefined>();
   
@@ -51,8 +56,8 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Persistir cola automáticamente
   useEffect(() => {
-    QueueStorage.save(queue);
-  }, [queue]);
+    QueueStorage.save(queue, user?.id);
+  }, [queue, user?.id]);
 
   // Persistir estado automáticamente
   useEffect(() => {
@@ -60,9 +65,10 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
       currentIndex,
       isRepeatMode,
       isShuffleMode,
-      currentTrackId: currentTrack?.id
-    });
-  }, [currentIndex, isRepeatMode, isShuffleMode, currentTrack]);
+      currentTrackId: currentTrack?.id,
+      autoPlayEnabled
+    }, user?.id);
+  }, [currentIndex, isRepeatMode, isShuffleMode, currentTrack, autoPlayEnabled, user?.id]);
 
   const playTrack = useCallback((track: Track) => {
     const playlistTrack: PlaylistTrack = { ...track, addedAt: new Date() };
@@ -76,13 +82,16 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentIndex(existingIndex);
     }
     
+    // Registrar en historial de reproducción
+    recordPlayStart(track);
+    
     // Notify library context about track play
     if (onTrackPlay) {
       onTrackPlay(track);
     }
     
     toast({ title: 'Reproduciendo', description: `${track.name} - ${track.artist_name}` });
-  }, [queue, toast, onTrackPlay]);
+  }, [queue, toast, onTrackPlay, recordPlayStart]);
 
   // Nueva función para reproducir desde un contexto específico (playlist, favoritos, etc.)
   const playFromContext = useCallback((track: Track, contextTracks: Track[], startIndex: number) => {
@@ -257,6 +266,17 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, [isShuffleMode, queue, currentTrack, originalQueue, toast]);
 
+  const toggleAutoPlay = useCallback(() => {
+    setAutoPlayEnabled(prev => {
+      const newValue = !prev;
+      toast({ 
+        title: newValue ? 'Reproducción automática activada' : 'Reproducción automática desactivada',
+        description: newValue ? 'Las canciones se reproducirán automáticamente al cambiar' : 'Las canciones no se reproducirán automáticamente'
+      });
+      return newValue;
+    });
+  }, [toast]);
+
   const clearQueue = useCallback(() => {
     setQueue([]);
     setCurrentTrack(null);
@@ -264,9 +284,9 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     setIsRepeatMode(false);
     setIsShuffleMode(false);
     setOriginalQueue([]);
-    QueueStorage.clear();
+    QueueStorage.clear(user?.id);
     toast({ title: 'Cola limpiada', description: 'Se eliminaron todas las canciones y se reinició el estado.' });
-  }, [toast]);
+  }, [toast, user?.id]);
 
   const contextValue = useMemo(() => ({
     queue, 
@@ -274,6 +294,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     currentIndex,
     isRepeatMode,
     isShuffleMode,
+    autoPlayEnabled,
     playTrack,
     playFromContext, 
     addToQueue, 
@@ -283,6 +304,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     prevTrack, 
     toggleRepeat,
     toggleShuffle,
+    toggleAutoPlay,
     clearQueue,
     onTrackPlay
   }), [
@@ -291,6 +313,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     currentIndex,
     isRepeatMode,
     isShuffleMode,
+    autoPlayEnabled,
     playTrack,
     playFromContext, 
     addToQueue, 
@@ -300,6 +323,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     prevTrack, 
     toggleRepeat,
     toggleShuffle,
+    toggleAutoPlay,
     clearQueue,
     onTrackPlay
   ]);

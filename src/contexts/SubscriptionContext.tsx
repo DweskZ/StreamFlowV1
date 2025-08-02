@@ -224,30 +224,109 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     return Math.max(0, planLimits.maxPlaylists - (count || 0));
   }, [user, planLimits]);
 
-  // Acciones (placeholder - implementar con Stripe después)
+  // Acciones con Stripe
   const upgradeToPlan = useCallback(async (planId: string): Promise<void> => {
-    // TODO: Implementar con Stripe
-    toast({
-      title: 'Próximamente',
-      description: 'La funcionalidad de upgrade estará disponible pronto.',
-    });
-  }, [toast]);
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'Debes iniciar sesión para actualizar tu plan.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
+          planId,
+          successUrl: `${window.location.origin}/app/payment-success?success=true`,
+          cancelUrl: `${window.location.origin}/app/pricing?canceled=true`,
+        },
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Error creating checkout session:', err);
+      toast({
+        title: 'Error',
+        description: 'No se pudo crear la sesión de pago. Inténtalo de nuevo.',
+        variant: 'destructive',
+      });
+    }
+  }, [user, toast]);
 
   const cancelSubscription = useCallback(async (): Promise<void> => {
-    // TODO: Implementar con Stripe
-    toast({
-      title: 'Próximamente',
-      description: 'La funcionalidad de cancelación estará disponible pronto.',
-    });
-  }, [toast]);
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'Debes iniciar sesión para cancelar tu suscripción.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-subscription', {
+        body: { action: 'cancel' },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Suscripción cancelada',
+        description: 'Tu suscripción se cancelará al final del período actual.',
+      });
+
+      // Reload subscription data
+      await loadUserSubscription();
+    } catch (err) {
+      console.error('Error canceling subscription:', err);
+      toast({
+        title: 'Error',
+        description: 'No se pudo cancelar la suscripción. Inténtalo de nuevo.',
+        variant: 'destructive',
+      });
+    }
+  }, [user, toast, loadUserSubscription]);
 
   const resumeSubscription = useCallback(async (): Promise<void> => {
-    // TODO: Implementar con Stripe
-    toast({
-      title: 'Próximamente',
-      description: 'La funcionalidad de reanudar estará disponible pronto.',
-    });
-  }, [toast]);
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'Debes iniciar sesión para reanudar tu suscripción.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-subscription', {
+        body: { action: 'resume' },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Suscripción reanudada',
+        description: 'Tu suscripción ha sido reanudada exitosamente.',
+      });
+
+      // Reload subscription data
+      await loadUserSubscription();
+    } catch (err) {
+      console.error('Error resuming subscription:', err);
+      toast({
+        title: 'Error',
+        description: 'No se pudo reanudar la suscripción. Inténtalo de nuevo.',
+        variant: 'destructive',
+      });
+    }
+  }, [user, toast, loadUserSubscription]);
 
   const value: SubscriptionContextValue = useMemo(() => ({
     // Estado

@@ -38,7 +38,11 @@ export default function PlaylistMenu({ track, onAddToPlaylist }: PlaylistMenuPro
   const handleSubMenuMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setIsSubOpen(false);
-    }, 500); // Increased delay for better UX
+    }, 300); // Reduced delay for better responsiveness
+  };
+
+  const handleSubMenuClick = () => {
+    setIsSubOpen(!isSubOpen);
   };
 
   // Ajustar posición del submenú cuando se abre
@@ -80,16 +84,19 @@ export default function PlaylistMenu({ track, onAddToPlaylist }: PlaylistMenuPro
         className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-purple-500/20 focus:bg-purple-500/20 text-white w-full text-left"
         onMouseEnter={handleSubMenuMouseEnter}
         onMouseLeave={handleSubMenuMouseLeave}
+        onClick={handleSubMenuClick}
       >
         <Plus className="h-4 w-4 mr-2" />
         Añadir a playlist
-        <ChevronRight className="h-4 w-4 ml-auto" />
+        <ChevronRight className={`h-4 w-4 ml-auto transition-transform ${isSubOpen ? 'rotate-90' : ''}`} />
       </button>
       
       {isSubOpen && (
         <div
           ref={subMenuRef}
           className="bg-black/90 backdrop-blur-sm border border-purple-500/30 rounded-md shadow-lg min-w-[220px] max-h-[300px] overflow-y-auto"
+          onMouseEnter={handleSubMenuMouseEnter}
+          onMouseLeave={handleSubMenuMouseLeave}
         >
           <div className="p-1">
             {playlists.length > 0 ? (

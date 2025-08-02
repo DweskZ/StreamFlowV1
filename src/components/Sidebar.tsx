@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { PlanBadge } from './subscription/PlanBadge';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Home, 
   Search, 
@@ -15,10 +23,12 @@ import {
   Plus, 
   Music, 
   PlaySquare,
-  TrendingUp,
-  Radio,
+  Target,
   User,
-  X
+  X,
+  Shield,
+  Settings,
+  ChevronDown
 } from 'lucide-react';
 import {
   Dialog,
@@ -40,11 +50,17 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { playlists, createPlaylist } = useLibrary();
   const { user } = useAuth();
+  const { isAdmin, loading } = useAdmin();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
+
+  // Debug logs
+  console.log('🔍 Sidebar - User:', user?.email, user?.id);
+  console.log('🔍 Sidebar - isAdmin:', isAdmin, 'loading:', loading);
 
   // Don't render sidebar for non-authenticated users
   if (!user) {
@@ -67,16 +83,10 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       active: isActive('/app/search')
     },
     {
-      icon: TrendingUp,
-      label: 'Tendencias',
-      path: '/app/trending',
-      active: isActive('/app/trending')
-    },
-    {
-      icon: Radio,
-      label: 'Radio',
-      path: '/app/radio',
-      active: isActive('/app/radio')
+      icon: Target,
+      label: 'Para ti',
+      path: '/app/recommendations',
+      active: isActive('/app/recommendations')
     }
   ];
 
@@ -160,6 +170,8 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
             );
           })}
         </div>
+
+        {/* Admin link removed - will be added to profile dropdown */}
 
         <Separator className="my-4 bg-purple-500/20" />
 
@@ -289,17 +301,52 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       </ScrollArea>
 
       {/* User Profile */}
-      <div className="p-3 border-t border-purple-500/20 flex-shrink-0">
-        <Link
-          to="/profile"
-          onClick={handleLinkClick}
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-purple-500/10 transition-all duration-200"
-        >
-          <div className="h-8 w-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-glow-purple/30">
-            <User className="h-4 w-4 text-white" />
-          </div>
-          <span>Perfil</span>
-        </Link>
+      <div className="p-3 border-t border-purple-500/20 flex-shrink-0 space-y-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 px-3 py-2 h-auto text-sm font-medium text-gray-400 hover:text-white hover:bg-purple-500/10 transition-all duration-200"
+            >
+              <div className="h-8 w-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-glow-purple/30">
+                <User className="h-4 w-4 text-white" />
+              </div>
+              <span className="flex-1 text-left">Perfil</span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="start" 
+            className="w-56 bg-black/90 backdrop-blur-sm border-purple-500/30 text-white"
+          >
+            <DropdownMenuItem asChild>
+              <Link
+                to="/profile"
+                onClick={handleLinkClick}
+                className="flex items-center gap-3 cursor-pointer"
+              >
+                <User className="h-4 w-4" />
+                <span>Mi Perfil</span>
+              </Link>
+            </DropdownMenuItem>
+            
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator className="bg-purple-500/20" />
+                <DropdownMenuItem 
+                  onClick={() => {
+                    handleLinkClick();
+                    navigate('/admin');
+                  }}
+                  className="flex items-center gap-3 cursor-pointer text-orange-400 hover:text-orange-300"
+                >
+                  <Shield className="h-4 w-4" />
+                  <span>Panel de Administración</span>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

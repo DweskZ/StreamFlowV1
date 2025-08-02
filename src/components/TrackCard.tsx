@@ -1,8 +1,9 @@
-import { Play, Plus, Clock, Zap, Volume2, Heart, MoreHorizontal } from 'lucide-react';
+import { Play, Plus, Clock, Zap, Volume2, Heart, MoreHorizontal, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Track } from '@/types/music';
 import { useLibrary } from '@/contexts/LibraryContext';
+import { usePlaylists } from '@/hooks/usePlaylists';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useEffect } from 'react';
 
 interface TrackCardProps {
   readonly track: Track;
@@ -29,10 +31,30 @@ const formatDuration = (duration: string): string => {
 };
 
 export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: TrackCardProps) {
-  const { playlists, addTrackToPlaylist, addToLiked, removeFromLiked, isLiked } = useLibrary();
+  // Debug: verificar que el componente se está cargando
+  console.log('🎵 TrackCard renderizado para:', track.name);
+  
+  // Usar usePlaylists directamente como en el componente de prueba
+  const { playlists, addTrackToPlaylist, createPlaylist, loading, error } = usePlaylists();
+  const { addToLiked, removeFromLiked, isLiked } = useLibrary();
+  
+  // Debug: verificar si las playlists se cargan
+  useEffect(() => {
+    console.log('🔍 TrackCard - Playlists cargadas:', playlists.length, playlists.map(p => p.name));
+    console.log('🔍 TrackCard - Loading:', loading, 'Error:', error);
+  }, [playlists, loading, error]);
   
   const handleAddToPlaylist = (playlistId: string) => {
+    console.log('🎯 Añadiendo track a playlist:', playlistId);
     addTrackToPlaylist(playlistId, track);
+  };
+
+  const handleCreatePlaylistAndAdd = async () => {
+    console.log('🆕 Creando nueva playlist...');
+    const newPlaylist = await createPlaylist(`Nueva Playlist ${playlists.length + 1}`);
+    if (newPlaylist) {
+      handleAddToPlaylist(newPlaylist.id);
+    }
   };
 
   const handleToggleLike = () => {
@@ -42,6 +64,7 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
       addToLiked(track);
     }
   };
+
   return (
     <Card className="group bg-black/20 backdrop-blur-sm border-purple-500/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-glow-purple/30">
       <CardContent className="p-3 sm:p-4">
@@ -119,7 +142,7 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
               <span className="sm:hidden">+</span>
             </Button>
 
-            {/* More Actions Dropdown */}
+            {/* More Actions Dropdown - IMPLEMENTACIÓN EXACTA DEL COMPONENTE DE PRUEBA */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -128,7 +151,7 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="cyber-card border-purple-500/30 backdrop-blur-glass w-48" align="end">
+              <DropdownMenuContent className="bg-black/90 border-purple-500/30 w-48" align="end">
                 <DropdownMenuItem 
                   onClick={() => onAddToQueue(track)}
                   className="text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 transition-colors"
@@ -137,32 +160,40 @@ export default function TrackCard({ track, onPlay, onAddToQueue, isPlaying }: Tr
                   Añadir a la cola
                 </DropdownMenuItem>
                 
+                <DropdownMenuSeparator className="bg-purple-500/30" />
+                
+                {/* IMPLEMENTACIÓN EXACTA DEL COMPONENTE DE PRUEBA QUE FUNCIONA */}
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 transition-colors">
+                  <DropdownMenuSubTrigger className="text-purple-400 hover:bg-purple-500/10">
                     <Plus className="w-4 h-4 mr-2" />
-                    Añadir a playlist
+                    Añadir a playlist ({playlists.length})
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="cyber-card border-purple-500/30 backdrop-blur-glass w-44">
+                  <DropdownMenuSubContent className="bg-black/90 border-purple-500/30 w-44">
                     {playlists.length > 0 ? (
                       playlists.map((playlist) => (
                         <DropdownMenuItem
                           key={playlist.id}
                           onClick={() => handleAddToPlaylist(playlist.id)}
-                          className="text-gray-300 hover:bg-purple-500/10 hover:text-purple-300 transition-colors"
+                          className="text-gray-300 hover:bg-purple-500/10"
                         >
-                          <span className="truncate">{playlist.name}</span>
-                          <span className="text-xs text-gray-500 ml-2">({playlist.tracks.length})</span>
+                          <Music className="w-4 h-4 mr-2 text-purple-400" />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate font-medium">{playlist.name}</div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {playlist.tracks.length} {playlist.tracks.length === 1 ? 'canción' : 'canciones'}
+                            </div>
+                          </div>
                         </DropdownMenuItem>
                       ))
                     ) : (
                       <DropdownMenuItem disabled className="text-gray-500">
-                        <span>No hay playlists</span>
+                        {loading ? 'Cargando playlists...' : 'No hay playlists'}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
-
-                <DropdownMenuSeparator className="bg-purple-500/20" />
+                
+                <DropdownMenuSeparator className="bg-purple-500/30" />
                 
                 <DropdownMenuItem 
                   onClick={handleToggleLike}
