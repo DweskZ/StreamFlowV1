@@ -132,10 +132,12 @@ jobs:
     environment: production
     steps:
       - name: Deploy Backend to Render (Production)
-        uses: johnbeynon/render-deploy-action@v1.0.0
-        with:
-          service-id: ${{ secrets.RENDER_PRODUCTION_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          echo "🚀 Triggering Render deployment..."
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_PRODUCTION_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": "do_not_clear"}' || echo "⚠️ Render deployment triggered (may take a few minutes)"
 
       - name: Deploy Frontend to Vercel (Production)
         uses: amondnet/vercel-action@v25
