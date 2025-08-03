@@ -15,7 +15,6 @@
     "backend:install": "cd backend && npm install",
     "clean": "rm -rf node_modules package-lock.json dist",
     "clean:install": "npm run clean && npm install",
-    "vercel-build": "npm run build",
     "test:build": "node test-build.js"
   },
   "dependencies": {
@@ -91,4 +90,3 @@
     "vite": "^7.0.6"
   }
 }
-
