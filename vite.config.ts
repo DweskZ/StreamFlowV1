@@ -19,5 +19,22 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: mode === 'development',
+    // Configuración específica para Vercel
+    target: 'esnext',
+    minify: 'esbuild',
+    // Evitar problemas con dependencias opcionales
+    rollupOptions: {
+      external: [],
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+        },
+      },
+    },
+  },
+  // Configuración específica para Vercel
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
   },
 }));

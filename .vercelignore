@@ -1,0 +1,16 @@
+# Archivos y directorios a ignorar en Vercel
+node_modules
+.git
+.github
+backend
+Docs
+Sqlscripts
+Tests_and_scripts
+*.log
+.env.local
+.env.development
+.env.test
+coverage
+.nyc_output
+.DS_Store
+Thumbs.db 
