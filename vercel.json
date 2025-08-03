@@ -3,12 +3,7 @@
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "installCommand": "npm ci --prefer-offline --no-audit --no-fund --no-optional",
-        "buildCommand": "npm run build"
-      }
+      "use": "@vercel/static-build"
     }
   ],
   "routes": [
@@ -17,4 +12,4 @@
       "dest": "/index.html"
     }
   ]
-} 
+}
