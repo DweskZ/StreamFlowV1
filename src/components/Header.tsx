@@ -264,23 +264,15 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
               </PopoverContent>
             </Popover>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button 
-                asChild 
-                variant="ghost" 
-                size="sm"
-                className="text-neon-cyan hover:text-neon-cyan/80 hover:bg-neon-cyan/10 transition-all duration-300 hidden sm:flex"
-              >
-                <Link to="/login">Iniciar sesión</Link>
-              </Button>
-              <Button 
-                asChild 
-                size="sm"
-                className="neon-button text-white font-medium"
-              >
-                <Link to="/login">Registrarse</Link>
-              </Button>
-            </div>
+                         <div className="flex items-center gap-2">
+               <Button 
+                 asChild 
+                 size="sm"
+                 className="neon-button text-white font-medium"
+               >
+                 <Link to="/login">Iniciar</Link>
+               </Button>
+             </div>
           )}
         </div>
       </div>

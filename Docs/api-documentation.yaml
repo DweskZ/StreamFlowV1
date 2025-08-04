@@ -1,0 +1,1110 @@
+openapi: 3.0.3
+info:
+  title: StreamFlow API
+  description: |
+    API completa para la plataforma de streaming de música StreamFlow.
+    
+    ## Características Principales
+    - Autenticación y autorización de usuarios
+    - Gestión de música y reproducción
+    - Sistema de playlists
+    - Búsqueda y recomendaciones
+    - Gestión de suscripciones
+    
+    ## Autenticación
+    Esta API utiliza JWT tokens para autenticación. Incluye el token en el header `Authorization: Bearer <token>`.
+    
+    ## Rate Limiting
+    - Usuarios no autenticados: 100 requests/hour
+    - Usuarios autenticados: 1000 requests/hour
+    - Usuarios premium: 5000 requests/hour
+  version: 1.0.0
+  contact:
+    name: StreamFlow Support
+    email: soporte@streamflow.com
+    url: https://streamflow.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.streamflow.com/v1
+    description: Production server
+  - url: https://staging-api.streamflow.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ========================================
+  # AUTENTICACIÓN
+  # ========================================
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Registrar nuevo usuario
+      description: Crea una nueva cuenta de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email del usuario
+                  example: usuario@ejemplo.com
+                password:
+                  type: string
+                  minLength: 8
+                  description: Contraseña (mínimo 8 caracteres)
+                  example: "password123"
+                name:
+                  type: string
+                  minLength: 2
+                  description: Nombre completo del usuario
+                  example: "Juan Pérez"
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Usuario ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Iniciar sesión
+      description: Autentica un usuario existente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: usuario@ejemplo.com
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Cerrar sesión
+      description: Invalida el token actual del usuario
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout exitoso
+        '401':
+          description: Token inválido
+
+  # ========================================
+  # USUARIOS
+  # ========================================
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: Obtener perfil del usuario
+      description: Retorna la información del perfil del usuario autenticado
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: No autorizado
+
+    put:
+      tags:
+        - Users
+      summary: Actualizar perfil del usuario
+      description: Actualiza la información del perfil del usuario
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Juan Pérez Actualizado"
+                avatar_url:
+                  type: string
+                  format: uri
+                  example: "https://example.com/avatar.jpg"
+                bio:
+                  type: string
+                  example: "Amante de la música electrónica"
+      responses:
+        '200':
+          description: Perfil actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Datos inválidos
+        '401':
+          description: No autorizado
+
+  # ========================================
+  # MÚSICA Y REPRODUCCIÓN
+  # ========================================
+  /tracks:
+    get:
+      tags:
+        - Music
+      summary: Obtener canciones
+      description: Retorna una lista paginada de canciones
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Número de elementos por página
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: genre
+          in: query
+          description: Filtrar por género
+          required: false
+          schema:
+            type: string
+        - name: artist
+          in: query
+          description: Filtrar por artista
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de canciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackList'
+
+  /tracks/{trackId}:
+    get:
+      tags:
+        - Music
+      summary: Obtener canción específica
+      description: Retorna los detalles de una canción específica
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          description: ID de la canción
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalles de la canción
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '404':
+          description: Canción no encontrada
+
+  /tracks/trending:
+    get:
+      tags:
+        - Music
+      summary: Obtener canciones trending
+      description: Retorna las canciones más populares del momento
+      parameters:
+        - name: limit
+          in: query
+          description: Número de canciones a retornar
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Lista de canciones trending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackList'
+
+  /tracks/search:
+    get:
+      tags:
+        - Music
+      summary: Buscar canciones
+      description: Busca canciones por título, artista o álbum
+      parameters:
+        - name: q
+          in: query
+          description: Término de búsqueda
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: type
+          in: query
+          description: Tipo de búsqueda
+          required: false
+          schema:
+            type: string
+            enum: [track, artist, album]
+            default: track
+        - name: limit
+          in: query
+          description: Número de resultados
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Resultados de búsqueda
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+
+  # ========================================
+  # PLAYER Y REPRODUCCIÓN
+  # ========================================
+  /player/queue:
+    get:
+      tags:
+        - Player
+      summary: Obtener cola de reproducción
+      description: Retorna la cola de reproducción del usuario
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Cola de reproducción
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+
+    post:
+      tags:
+        - Player
+      summary: Agregar canción a la cola
+      description: Agrega una canción al final de la cola de reproducción
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - trackId
+              properties:
+                trackId:
+                  type: string
+                  description: ID de la canción a agregar
+      responses:
+        '200':
+          description: Canción agregada exitosamente
+        '400':
+          description: Datos inválidos
+        '401':
+          description: No autorizado
+
+  /player/queue/{trackId}:
+    delete:
+      tags:
+        - Player
+      summary: Remover canción de la cola
+      description: Remueve una canción específica de la cola de reproducción
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          description: ID de la canción a remover
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canción removida exitosamente
+        '404':
+          description: Canción no encontrada en la cola
+
+  # ========================================
+  # PLAYLISTS
+  # ========================================
+  /playlists:
+    get:
+      tags:
+        - Playlists
+      summary: Obtener playlists del usuario
+      description: Retorna las playlists del usuario autenticado
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de playlists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistList'
+
+    post:
+      tags:
+        - Playlists
+      summary: Crear nueva playlist
+      description: Crea una nueva playlist para el usuario
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Mi Playlist Favorita"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "Una colección de mis canciones favoritas"
+                isPublic:
+                  type: boolean
+                  default: false
+                  example: true
+      responses:
+        '201':
+          description: Playlist creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+
+  /playlists/{playlistId}:
+    get:
+      tags:
+        - Playlists
+      summary: Obtener playlist específica
+      description: Retorna los detalles de una playlist específica
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          description: ID de la playlist
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalles de la playlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+        '404':
+          description: Playlist no encontrada
+
+    put:
+      tags:
+        - Playlists
+      summary: Actualizar playlist
+      description: Actualiza los detalles de una playlist
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          description: ID de la playlist
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+                isPublic:
+                  type: boolean
+      responses:
+        '200':
+          description: Playlist actualizada exitosamente
+        '403':
+          description: No tienes permisos para editar esta playlist
+        '404':
+          description: Playlist no encontrada
+
+    delete:
+      tags:
+        - Playlists
+      summary: Eliminar playlist
+      description: Elimina una playlist del usuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          description: ID de la playlist
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Playlist eliminada exitosamente
+        '403':
+          description: No tienes permisos para eliminar esta playlist
+        '404':
+          description: Playlist no encontrada
+
+  /playlists/{playlistId}/tracks:
+    post:
+      tags:
+        - Playlists
+      summary: Agregar canción a playlist
+      description: Agrega una canción a una playlist específica
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          description: ID de la playlist
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - trackId
+              properties:
+                trackId:
+                  type: string
+                  description: ID de la canción a agregar
+      responses:
+        '200':
+          description: Canción agregada exitosamente
+        '403':
+          description: No tienes permisos para editar esta playlist
+        '404':
+          description: Playlist no encontrada
+
+    delete:
+      tags:
+        - Playlists
+      summary: Remover canción de playlist
+      description: Remueve una canción de una playlist específica
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          description: ID de la playlist
+          schema:
+            type: string
+        - name: trackId
+          in: query
+          required: true
+          description: ID de la canción a remover
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canción removida exitosamente
+        '403':
+          description: No tienes permisos para editar esta playlist
+        '404':
+          description: Playlist o canción no encontrada
+
+  # ========================================
+  # LIKES Y FAVORITOS
+  # ========================================
+  /tracks/{trackId}/like:
+    post:
+      tags:
+        - Likes
+      summary: Dar like a una canción
+      description: Marca una canción como favorita
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          description: ID de la canción
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Like agregado exitosamente
+        '401':
+          description: No autorizado
+
+    delete:
+      tags:
+        - Likes
+      summary: Quitar like de una canción
+      description: Remueve el like de una canción
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          description: ID de la canción
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Like removido exitosamente
+        '401':
+          description: No autorizado
+
+  /tracks/liked:
+    get:
+      tags:
+        - Likes
+      summary: Obtener canciones favoritas
+      description: Retorna las canciones que el usuario ha marcado como favoritas
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Número de elementos por página
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Lista de canciones favoritas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackList'
+
+  # ========================================
+  # RECOMENDACIONES
+  # ========================================
+  /recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Obtener recomendaciones
+      description: Retorna recomendaciones personalizadas basadas en el historial del usuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Número de recomendaciones
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: genre
+          in: query
+          description: Filtrar por género específico
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de recomendaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackList'
+
+  # ========================================
+  # SUSCRIPCIONES
+  # ========================================
+  /subscription:
+    get:
+      tags:
+        - Subscription
+      summary: Obtener información de suscripción
+      description: Retorna el estado actual de la suscripción del usuario
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Información de suscripción
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  /subscription/upgrade:
+    post:
+      tags:
+        - Subscription
+      summary: Actualizar suscripción
+      description: Inicia el proceso de actualización de suscripción
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - planId
+              properties:
+                planId:
+                  type: string
+                  enum: [premium_monthly, premium_yearly]
+                  description: ID del plan de suscripción
+      responses:
+        '200':
+          description: Proceso de actualización iniciado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkoutUrl:
+                    type: string
+                    format: uri
+                    description: URL para completar el pago
+
+  # ========================================
+  # HEALTH CHECK
+  # ========================================
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Verifica el estado del sistema
+      responses:
+        '200':
+          description: Sistema funcionando correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ========================================
+    # AUTHENTICATION SCHEMAS
+    # ========================================
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT token para autenticación
+        refreshToken:
+          type: string
+          description: Token para renovar la sesión
+        expiresIn:
+          type: integer
+          description: Tiempo de expiración en segundos
+
+    # ========================================
+    # USER SCHEMAS
+    # ========================================
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            bio:
+              type: string
+              nullable: true
+            subscription:
+              $ref: '#/components/schemas/Subscription'
+
+    # ========================================
+    # MUSIC SCHEMAS
+    # ========================================
+    Track:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        artist_name:
+          type: string
+        album_name:
+          type: string
+        duration:
+          type: string
+          description: Duración en formato MM:SS
+        genre:
+          type: string
+        album_image:
+          type: string
+          format: uri
+        audio_url:
+          type: string
+          format: uri
+        is_liked:
+          type: boolean
+          description: Si el usuario actual ha dado like
+        play_count:
+          type: integer
+          description: Número de reproducciones
+        created_at:
+          type: string
+          format: date-time
+
+    TrackList:
+      type: object
+      properties:
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    SearchResults:
+      type: object
+      properties:
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        artists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Artist'
+        albums:
+          type: array
+          items:
+            $ref: '#/components/schemas/Album'
+        total:
+          type: integer
+          description: Total de resultados
+
+    Artist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+        followers_count:
+          type: integer
+
+    Album:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        artist_name:
+          type: string
+        image_url:
+          type: string
+          format: uri
+        tracks_count:
+          type: integer
+
+    # ========================================
+    # PLAYER SCHEMAS
+    # ========================================
+    Queue:
+      type: object
+      properties:
+        current_track:
+          $ref: '#/components/schemas/Track'
+          nullable: true
+        queue:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+
+    # ========================================
+    # PLAYLIST SCHEMAS
+    # ========================================
+    Playlist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_public:
+          type: boolean
+        tracks_count:
+          type: integer
+        duration:
+          type: string
+          description: Duración total en formato HH:MM:SS
+        created_by:
+          $ref: '#/components/schemas/User'
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PlaylistList:
+      type: object
+      properties:
+        playlists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Playlist'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # ========================================
+    # SUBSCRIPTION SCHEMAS
+    # ========================================
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          enum: [free, premium_monthly, premium_yearly]
+        status:
+          type: string
+          enum: [active, inactive, cancelled, past_due]
+        current_period_start:
+          type: string
+          format: date-time
+        current_period_end:
+          type: string
+          format: date-time
+        cancel_at_period_end:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+          example: ["unlimited_skips", "offline_download", "high_quality"]
+
+    # ========================================
+    # COMMON SCHEMAS
+    # ========================================
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Página actual
+        limit:
+          type: integer
+          description: Elementos por página
+        total:
+          type: integer
+          description: Total de elementos
+        total_pages:
+          type: integer
+          description: Total de páginas
+        has_next:
+          type: boolean
+          description: Si hay página siguiente
+        has_prev:
+          type: boolean
+          description: Si hay página anterior
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Código de error
+        message:
+          type: string
+          description: Mensaje de error descriptivo
+        details:
+          type: object
+          description: Detalles adicionales del error
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp del error
+
+tags:
+  - name: Authentication
+    description: Endpoints para autenticación y gestión de usuarios
+  - name: Users
+    description: Gestión de perfiles de usuario
+  - name: Music
+    description: Endpoints para música y canciones
+  - name: Player
+    description: Control de reproducción y cola de música
+  - name: Playlists
+    description: Gestión de playlists
+  - name: Likes
+    description: Sistema de likes y favoritos
+  - name: Recommendations
+    description: Recomendaciones personalizadas
+  - name: Subscription
+    description: Gestión de suscripciones
+  - name: System
+    description: Endpoints del sistema 
