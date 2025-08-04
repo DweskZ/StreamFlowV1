@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucXRsbHRpd29vY3dham9yZ2xwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMTE0NDQsImV4cCI6MjA2ODg4NzQ0NH0.41ZEEl9xpd6wvpr88wkbjKvmqtfRVMZt7bl8zCzL6os';
+// La clave anónima se obtiene del cliente de Supabase configurado
 
 interface StripeCheckoutOptions {
   priceId: string

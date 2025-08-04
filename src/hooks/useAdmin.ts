@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -6,16 +6,18 @@ export const useAdmin = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const lastCheckedUserId = useRef<string | null>(null);
 
   useEffect(() => {
-    checkAdminStatus();
-  }, [user]);
+    // Solo verificar si el usuario cambió
+    if (user?.id !== lastCheckedUserId.current) {
+      lastCheckedUserId.current = user?.id || null;
+      checkAdminStatus();
+    }
+  }, [user?.id]);
 
   const checkAdminStatus = async () => {
-    console.log('🔍 Checking admin status for user:', user?.email, user?.id);
-    
     if (!user) {
-      console.log('❌ No user found, setting isAdmin to false');
       setIsAdmin(false);
       setLoading(false);
       return;
@@ -23,26 +25,26 @@ export const useAdmin = () => {
 
     try {
       setLoading(true);
-      console.log('🔍 Querying profiles table for user ID:', user.id);
 
       // Verificar si el usuario es admin consultando su perfil
       const { data, error } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Usar maybeSingle en lugar de single para evitar errores
 
       if (error) {
-        console.error('❌ Error checking admin status:', error);
+        // Solo loggear errores que no sean "no rows found"
+        if (error.code !== 'PGRST116') {
+          console.warn('⚠️ Error checking admin status:', error.message);
+        }
         setIsAdmin(false);
       } else {
-        console.log('✅ Admin status result:', data);
         const adminStatus = data?.is_admin || false;
-        console.log('🎯 Setting isAdmin to:', adminStatus);
         setIsAdmin(adminStatus);
       }
     } catch (error) {
-      console.error('❌ Error checking admin status:', error);
+      console.warn('⚠️ Unexpected error checking admin status:', error);
       setIsAdmin(false);
     } finally {
       setLoading(false);

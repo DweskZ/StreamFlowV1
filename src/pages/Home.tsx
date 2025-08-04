@@ -215,7 +215,7 @@ export default function Home() {
                         : 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-black font-bold'
                     } transition-all duration-300`}
                   >
-                    <Link to={plan.id === 'free' ? '/login' : '/login'}>
+                    <Link to="/login">
                       {plan.id === 'free' ? 'Comenzar Gratis' : 'Obtener Premium'}
                     </Link>
                   </Button>
