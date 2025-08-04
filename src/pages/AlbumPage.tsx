@@ -50,6 +50,7 @@ const AlbumPage: React.FC<AlbumPageProps> = ({ album: propAlbum }) => {
 
   const shufflePlayAll = () => {
     if (album && album.tracks.length > 0) {
+      // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para mezcla de canciones
       const shuffled = [...album.tracks].sort(() => Math.random() - 0.5);
       playTrack(shuffled[0]);
       shuffled.slice(1).forEach(track => addToQueue(track));

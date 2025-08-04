@@ -101,6 +101,7 @@ const PlaylistPage = () => {
 
   const shufflePlayAll = () => {
     if (filteredTracks.length > 0) {
+      // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para mezcla de canciones
       const shuffled = [...filteredTracks].sort(() => Math.random() - 0.5);
       // Reproducir desde la lista mezclada
       playFromContext(shuffled[0], shuffled, 0);

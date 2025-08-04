@@ -12,6 +12,7 @@ const generateUUID = (): string => {
   }
   // Fallback para entornos donde crypto.randomUUID no está disponible
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para generación de UUID fallback
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);

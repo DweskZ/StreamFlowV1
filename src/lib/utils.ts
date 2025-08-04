@@ -1,9 +1,42 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+// Funciones de aleatoriedad segura
+export const secureRandom = {
+  // Generar un número entero aleatorio entre min y max (inclusive)
+  int: (min: number, max: number): number => {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return min + (array[0] % (max - min + 1));
+  },
+
+  // Generar un número decimal aleatorio entre 0 y 1
+  float: (): number => {
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return array[0] / (0xffffffff + 1);
+  },
+
+  // Mezclar un array de forma segura (Fisher-Yates shuffle)
+  shuffle: <T>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = secureRandom.int(0, i);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  },
+
+  // Seleccionar un elemento aleatorio de un array
+  choice: <T>(array: T[]): T => {
+    if (array.length === 0) throw new Error('Array cannot be empty');
+    return array[secureRandom.int(0, array.length - 1)];
+  }
+};
 
 /**
  * Limpia el localStorage de datos que han sido migrados a Supabase

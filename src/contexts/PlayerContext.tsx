@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { useToast } from '@/hooks/use-toast';
 import { Track, PlaylistTrack } from '@/types/music';
 import { QueueStorage } from '@/lib/QueueStorage';
+import { secureRandom } from '@/lib/utils';
 import { useListeningHistory } from '@/hooks/useListeningHistory';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -233,17 +234,15 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
         if (currentTrack) {
           // Remover la canción actual del shuffle
           const filteredQueue = shuffled.filter(t => t.id !== currentTrack.id);
-          // Mezclar el resto
-          filteredQueue.sort(() => Math.random() - 0.5);
-          const shuffledRest = filteredQueue;
+          // Mezclar el resto de forma segura
+          const shuffledRest = secureRandom.shuffle(filteredQueue);
           // Crear nueva cola con canción actual al inicio
           const newQueue = [currentTrack, ...shuffledRest];
           setQueue(newQueue);
           setCurrentIndex(0);
         } else {
-          // No hay canción actual, simplemente mezclar
-          shuffled.sort(() => Math.random() - 0.5);
-          const shuffledQueue = shuffled;
+          // No hay canción actual, simplemente mezclar de forma segura
+          const shuffledQueue = secureRandom.shuffle(shuffled);
           setQueue(shuffledQueue);
         }
       } else if (originalQueue.length > 0) {

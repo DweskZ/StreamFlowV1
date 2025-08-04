@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { secureRandom } from '@/lib/utils';
 
 export const AuthDebug = () => {
-  const [email, setEmail] = useState('user' + Math.floor(Math.random() * 1000) + '@test.com');
+  const [email, setEmail] = useState('user' + secureRandom.int(1000, 9999) + '@test.com');
   const [password, setPassword] = useState('password123456');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -171,7 +172,7 @@ export const AuthDebug = () => {
           </Button>
           
           <Button 
-            onClick={() => setEmail('user' + Math.floor(Math.random() * 1000) + '@gmail.com')}
+            onClick={() => setEmail('user' + secureRandom.int(1000, 9999) + '@gmail.com')}
             disabled={loading}
             variant="outline"
             className="w-full"

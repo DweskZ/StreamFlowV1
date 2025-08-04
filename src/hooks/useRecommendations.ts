@@ -196,6 +196,7 @@ export const useRecommendations = () => {
 
        // 3. Géneros populares (SIEMPRE mostrar)
        const popularGenres = ['Pop', 'Rock', 'Hip Hop', 'Electronic', 'Latin'];
+       // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para selección aleatoria de géneros
        const randomGenre = popularGenres[Math.floor(Math.random() * popularGenres.length)];
        const popularTracks = await searchTracksByGenre(randomGenre, 8);
        
@@ -211,6 +212,7 @@ export const useRecommendations = () => {
 
        // 4. Artistas destacados (SIEMPRE mostrar)
        const featuredArtists = ['Ed Sheeran', 'Taylor Swift', 'Drake', 'Bad Bunny', 'The Weeknd'];
+       // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para selección aleatoria de artistas
        const randomArtist = featuredArtists[Math.floor(Math.random() * featuredArtists.length)];
        const artistTracks = await searchTracksByArtist(randomArtist, 8);
        

@@ -650,6 +650,7 @@ const SidebarMenuSkeleton = React.forwardRef<
 >(({ className, showIcon = false, ...props }, ref) => {
   // Random width between 50 to 90%.
   const width = React.useMemo(() => {
+    // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para efectos visuales de skeleton
     return `${Math.floor(Math.random() * 40) + 50}%`
   }, [])
 

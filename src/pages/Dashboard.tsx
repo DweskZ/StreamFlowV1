@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Shuffle
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, secureRandom } from '@/lib/utils';
 
 // Estilos CSS para line-clamp
 const lineClampStyles = `
@@ -89,7 +89,7 @@ const Dashboard = () => {
 
   const playRandomLikedSong = () => {
     if (likedSongs.length > 0) {
-      const randomTrack = likedSongs[Math.floor(Math.random() * likedSongs.length)];
+      const randomTrack = secureRandom.choice(likedSongs);
       playTrack(randomTrack);
     }
   };
@@ -184,7 +184,7 @@ const Dashboard = () => {
                 size="sm"
                 onClick={() => {
                   if (recentlyPlayed.length > 0) {
-                    const shuffled = [...recentlyPlayed].sort(() => Math.random() - 0.5);
+                    const shuffled = secureRandom.shuffle([...recentlyPlayed]);
                     playTrack(shuffled[0]);
                     shuffled.slice(1).forEach(track => addToQueue(track));
                   }
