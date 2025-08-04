@@ -37,26 +37,26 @@ export default function QuickSearchResults({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
-        <span className="ml-2 text-sm text-gray-400">Buscando...</span>
+      <div className="flex items-center justify-center py-3 sm:py-4">
+        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin text-purple-400" />
+        <span className="ml-2 text-xs sm:text-sm text-gray-400">Buscando...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-4">
-        <p className="text-sm text-red-400">{error}</p>
+      <div className="text-center py-3 sm:py-4">
+        <p className="text-xs sm:text-sm text-red-400">{error}</p>
       </div>
     );
   }
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-4">
-        <Music className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-        <p className="text-sm text-gray-400">No se encontraron resultados</p>
+      <div className="text-center py-3 sm:py-4">
+        <Music className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500 mx-auto mb-2" />
+        <p className="text-xs sm:text-sm text-gray-400">No se encontraron resultados</p>
       </div>
     );
   }
@@ -64,38 +64,38 @@ export default function QuickSearchResults({
   return (
     <div className="py-2">
       {/* Results header */}
-      <div className="px-3 py-2 border-b border-purple-500/20">
-        <h3 className="text-sm font-medium text-gray-300">
+      <div className="px-2 sm:px-3 py-2 border-b border-purple-500/20">
+        <h3 className="text-xs sm:text-sm font-medium text-gray-300">
           Resultados para "{query}"
         </h3>
       </div>
 
       {/* Track results */}
-      <div className="max-h-64 overflow-y-auto">
+      <div className="max-h-64 sm:max-h-80 overflow-y-auto quick-search-results">
         {results.map((track, index) => (
           <button
             key={`${track.id}-${index}`}
             onClick={() => handleTrackClick(track)}
-            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-purple-500/20 transition-colors group"
+            className="w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-3 text-left hover:bg-purple-500/20 transition-colors group"
           >
             {/* Track image */}
             <div className="relative flex-shrink-0">
               <img
                 src={track.image || track.album_image || '/placeholder.svg'}
                 alt={track.name}
-                className="w-10 h-10 rounded object-cover"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded object-cover"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }}
               />
               <div className="absolute inset-0 bg-black/60 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Play className="h-4 w-4 text-white" />
+                <Play className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
               </div>
             </div>
 
             {/* Track info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-xs sm:text-sm font-medium text-white truncate">
                 {track.name}
               </p>
               <p className="text-xs text-gray-400 truncate">
@@ -103,8 +103,8 @@ export default function QuickSearchResults({
               </p>
             </div>
 
-            {/* Duration */}
-            <div className="text-xs text-gray-500">
+            {/* Duration - Hidden on very small screens */}
+            <div className="text-xs text-gray-500 hidden sm:block">
               {Math.floor(parseInt(track.duration) / 60)}:
               {(parseInt(track.duration) % 60).toString().padStart(2, '0')}
             </div>
@@ -114,10 +114,10 @@ export default function QuickSearchResults({
 
       {/* See all results link */}
       {results.length >= 8 && (
-        <div className="border-t border-purple-500/20 p-3">
+        <div className="border-t border-purple-500/20 p-2 sm:p-3">
           <button
             onClick={handleSeeAllResults}
-            className="w-full text-center text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            className="w-full text-center text-xs sm:text-sm text-purple-400 hover:text-purple-300 transition-colors"
           >
             Ver todos los resultados
           </button>
@@ -125,4 +125,26 @@ export default function QuickSearchResults({
       )}
     </div>
   );
+}
+
+// Custom styles for better mobile experience
+const styles = `
+  @media (max-width: 640px) {
+    .quick-search-results {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    
+    .quick-search-results::-webkit-scrollbar {
+      display: none;
+    }
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
 }

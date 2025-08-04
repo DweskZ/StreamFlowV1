@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Heart, MoreHorizontal, Volume2, VolumeX, Volume1, Monitor, ListMusic, Shuffle, SkipBack, SkipForward, Play, Pause, Repeat, Zap } from 'lucide-react';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Track } from '@/types/music';
 
 interface FixedPlayerBarProps {
@@ -46,6 +47,7 @@ export default function FixedPlayerBar({
   const [isPlaying, setIsPlaying] = useState(false);
   const { addToLiked, removeFromLiked, likedSongs, playlists, addTrackToPlaylist, createPlaylist } = useLibrary();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const isAuthenticated = !!user;
   const isLiked = currentTrack ? likedSongs.some(song => song.id === currentTrack.id) : false;
@@ -213,7 +215,7 @@ export default function FixedPlayerBar({
       <div className="h-full px-3 sm:px-4 lg:px-6 flex items-center justify-between max-w-screen-2xl mx-auto">
         
         {/* LEFT - Track Info (Mobile Optimized for Authenticated Users) */}
-        <div className={`flex items-center gap-3 sm:gap-4 ${isAuthenticated ? 'w-[200px] sm:w-[260px] lg:w-[320px]' : 'w-[180px] sm:w-[240px] lg:w-[320px]'} min-w-0`}>
+        <div className={`flex items-center gap-3 sm:gap-4 ${isAuthenticated ? 'w-[200px] sm:w-[260px] md:w-[280px] lg:w-[320px]' : 'w-[180px] sm:w-[240px] md:w-[260px] lg:w-[320px]'} min-w-0`}>
           <div className="relative flex-shrink-0 group">
             <img
               src={currentTrack.album_image || currentTrack.image || '/placeholder.svg'}
@@ -238,7 +240,7 @@ export default function FixedPlayerBar({
         </div>
 
         {/* CENTER - Playback Controls (Mobile Optimized) */}
-        <div className="flex-1 max-w-[320px] sm:max-w-[400px] lg:max-w-[500px] mx-auto">
+        <div className="flex-1 max-w-[280px] sm:max-w-[400px] md:max-w-[450px] lg:max-w-[500px] mx-auto">
           <div className="flex flex-col items-center space-y-2">
             {/* Control Buttons - Responsive Layout */}
             <div className="flex items-center justify-center gap-2 sm:gap-3">
@@ -354,7 +356,7 @@ export default function FixedPlayerBar({
         </div>
 
         {/* RIGHT - Volume and Controls (Mobile Optimized) */}
-        <div className={`flex items-center gap-3 sm:gap-4 ${isAuthenticated ? 'w-[140px] sm:w-[180px] lg:w-[250px]' : 'w-[120px] sm:w-[180px] lg:w-[250px]'} justify-end`}>
+        <div className={`flex items-center gap-3 sm:gap-4 ${isAuthenticated ? 'w-[140px] sm:w-[180px] md:w-[200px] lg:w-[250px]' : 'w-[120px] sm:w-[180px] md:w-[200px] lg:w-[250px]'} justify-end`}>
           {/* Authenticated User Controls - Moved to right side */}
           {isAuthenticated && (
             <>
@@ -430,8 +432,8 @@ export default function FixedPlayerBar({
             </>
           )}
           
-          {/* Volume Controls - Always visible but optimized */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* Volume Controls - Hidden on mobile, visible on larger screens */}
+          <div className="hidden md:flex items-center gap-3 sm:gap-4">
             <Button 
               size="icon" 
               variant="ghost" 
@@ -441,8 +443,8 @@ export default function FixedPlayerBar({
               <VolumeIcon className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
             </Button>
             
-            {/* Volume slider - Hidden on very small screens, visible on larger mobile */}
-            <div className="w-10 sm:w-16 lg:w-20 group hidden sm:block">
+            {/* Volume slider - Only visible on medium screens and up */}
+            <div className="w-10 sm:w-16 lg:w-20 group">
               <input
                 type="range"
                 min="0"

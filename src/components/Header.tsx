@@ -70,7 +70,8 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
 
   const handleSearchBlur = () => {
     // Delay hiding results to allow clicking on them
-    setTimeout(() => closeResults(), 200);
+    // Longer delay for mobile to account for touch events
+    setTimeout(() => closeResults(), 300);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +134,7 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
         </div>
 
         {/* CENTER - Enhanced Search bar */}
-        <div className="flex-1 max-w-md mx-4 lg:mx-8 relative">
+        <div className="flex-1 max-w-md mx-4 lg:mx-8 relative z-50">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
             <Input
@@ -158,9 +159,13 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
             )}
           </div>
 
-          {/* Quick Search Results Dropdown */}
-          {showSearchResults && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-xl border border-purple-500/30 rounded-lg shadow-xl z-50">
+                     {/* Quick Search Results Dropdown */}
+           {showSearchResults && (
+             <div 
+               className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-black/95 backdrop-blur-xl border border-purple-500/30 rounded-lg shadow-xl z-50 max-h-[60vh] sm:max-h-[70vh] overflow-hidden w-[280px] sm:w-[320px] lg:w-[400px]"
+               onMouseDown={(e) => e.preventDefault()}
+               onTouchStart={(e) => e.preventDefault()}
+             >
               <QuickSearchResults
                 results={searchResults}
                 loading={searchLoading}
