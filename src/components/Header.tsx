@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Settings, Crown, Menu, X } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Bell, MoreHorizontal, User, Crown, Menu, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -255,12 +255,7 @@ export default function Header({ onSearch, onToggleSidebar, isSidebarOpen }: Hea
                       Actualizar Plan
                     </Link>
                   )}
-                  <button
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-neon-purple/20 hover:text-neon-purple rounded transition-all duration-300 w-full text-left"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Configuración
-                  </button>
+
                   <div className="border-t border-neon-purple/20 pt-2">
                     <button
                       onClick={signOut}
