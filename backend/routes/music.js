@@ -418,4 +418,22 @@ router.get('/recommendations/trending', async (req, res) => {
   }
 });
 
+// Endpoint de prueba para verificar que el backend funciona
+router.get('/test', async (req, res) => {
+  try {
+    console.log('🧪 Endpoint de prueba llamado');
+    res.json({
+      status: 'success',
+      message: 'Backend funcionando correctamente',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error en endpoint de prueba:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
 export default router;

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Track } from '@/types/music';
 import { useAuth } from '@/contexts/AuthContext';
+import { searchTracks } from '@/hooks/useDeezerAPI';
 
 // Función helper para generar UUID
 const generateUUID = (): string => {
@@ -60,6 +61,64 @@ interface PlaylistTrackFromDB {
   position: number | null;
 }
 
+// Cache global para evitar búsquedas repetidas
+const globalEnrichmentCache = new Map<string, { track: Track, timestamp: number }>();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
+
+// Función para enriquecer tracks con datos completos desde la API
+const enrichTrackData = async (track: Track): Promise<Track> => {
+  try {
+    const cacheKey = `${track.name}-${track.artist_name}`;
+    const now = Date.now();
+    
+    // Verificar cache global
+    const cached = globalEnrichmentCache.get(cacheKey);
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log('📦 usePlaylists: Usando track en cache:', track.name, '-', track.artist_name);
+      return cached.track;
+    }
+
+    console.log('🔄 usePlaylists: Enriqueciendo track:', track.name, '-', track.artist_name);
+    
+    // Buscar en la API para obtener URLs frescas
+    const searchResults = await searchTracks(`${track.name} ${track.artist_name}`);
+    
+    // Encontrar el track más similar
+    const bestMatch = searchResults.find(result => 
+      result.id === track.id || 
+      (result.name.toLowerCase() === track.name.toLowerCase() && 
+       result.artist_name.toLowerCase() === track.artist_name.toLowerCase())
+    );
+
+    if (bestMatch) {
+      console.log('✅ usePlaylists: Match encontrado, actualizando URL de audio');
+      // Combinar los datos existentes con los nuevos datos de la API
+      const enrichedTrack = {
+        ...track,
+        audio: bestMatch.audio || track.audio || '',
+        audiodownload: bestMatch.audiodownload || track.audiodownload || '',
+        proaudio: bestMatch.proaudio || track.proaudio || '',
+        audiodlallowed: bestMatch.audiodlallowed || track.audiodlallowed || false,
+        album_image: bestMatch.album_image || track.album_image || track.image || '',
+        image: bestMatch.image || track.image || track.album_image || '',
+        // Mantener otros campos importantes
+        tags: bestMatch.tags || track.tags || { genres: [], instruments: [], vartags: [] }
+      };
+
+      // Guardar en cache global
+      globalEnrichmentCache.set(cacheKey, { track: enrichedTrack, timestamp: now });
+      
+      return enrichedTrack;
+    }
+
+    console.log('❌ usePlaylists: No se encontró match para el track');
+    return track;
+  } catch (error) {
+    console.error('❌ usePlaylists: Error enriqueciendo track data:', error);
+    return track;
+  }
+};
+
 export const usePlaylists = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +157,7 @@ export const usePlaylists = () => {
 
       console.log('✅ usePlaylists: Playlists cargadas exitosamente:', playlistsData?.length || 0);
 
-      // Para cada playlist, cargar sus tracks
+      // Para cada playlist, cargar sus tracks y enriquecerlos
       const playlistsWithTracks = await Promise.all(
         (playlistsData || []).map(async (playlistDB: PlaylistFromDB) => {
           console.log('🎵 usePlaylists: Cargando tracks para playlist:', playlistDB.name, playlistDB.id);
@@ -116,27 +175,33 @@ export const usePlaylists = () => {
             console.error(`Error loading tracks for playlist ${playlistDB.id}:`, tracksError);
           }
 
-          const tracks = (tracksData || []).map((pt: any) => pt.track_data as Track);
+          // Enriquecer cada track con datos completos desde la API
+          const enrichedTracks = await Promise.all(
+            (tracksData || []).map(async (pt: any) => {
+              const track = pt.track_data as Track;
+              return await enrichTrackData(track);
+            })
+          );
 
           return {
             id: playlistDB.id,
             name: playlistDB.name,
             description: playlistDB.description || undefined,
-            tracks,
+            tracks: enrichedTracks,
             createdAt: new Date(playlistDB.created_at || Date.now()),
             updatedAt: new Date(playlistDB.updated_at || Date.now()),
             imageUrl: playlistDB.cover_image_url || undefined,
             isPublic: playlistDB.is_public || false,
             coverImageUrl: playlistDB.cover_image_url || undefined,
             isCollaborative: playlistDB.is_collaborative || false,
-            totalTracks: tracks.length,
+            totalTracks: enrichedTracks.length,
             totalDuration: playlistDB.total_duration || 0,
             sortOrder: playlistDB.sort_order || 0
           } as Playlist;
         })
       );
 
-      console.log('🎉 usePlaylists: Playlists finales con tracks:', playlistsWithTracks.map(p => ({ name: p.name, tracksCount: p.tracks.length })));
+      console.log('🎉 usePlaylists: Playlists finales con tracks enriquecidos:', playlistsWithTracks.map(p => ({ name: p.name, tracksCount: p.tracks.length })));
       setPlaylists(playlistsWithTracks);
     } catch (err: any) {
       console.error('💥 usePlaylists: Error loading playlists:', err);
@@ -376,13 +441,16 @@ export const usePlaylists = () => {
     }
 
     try {
+      // Enriquecer el track antes de guardarlo
+      const enrichedTrack = await enrichTrackData(track);
+
       // Agregar a Supabase
       const { error: supabaseError } = await supabase
         .from('playlist_tracks')
         .insert({
           playlist_id: playlistId,
-          track_id: track.id,
-          track_data: track as any, // Cast para evitar error de tipos
+          track_id: enrichedTrack.id,
+          track_data: enrichedTrack as any, // Cast para evitar error de tipos
           added_by: user.id,
           position: playlist.tracks.length
         });
@@ -396,7 +464,7 @@ export const usePlaylists = () => {
         if (p.id === playlistId) {
           return {
             ...p,
-            tracks: [...p.tracks, track],
+            tracks: [...p.tracks, enrichedTrack],
             updatedAt: new Date(),
             totalTracks: (p.totalTracks || 0) + 1
           };

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { usePlaylistPlayback } from '@/hooks/usePlaylistPlayback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,8 +24,9 @@ import { Track } from '@/types/music';
 import { cn } from '@/lib/utils';
 
 const LikedSongsPage = () => {
-  const { likedSongs, removeFromLiked, addToRecentlyPlayed } = useLibrary();
-  const { playTrack: playerPlayTrack, playFromContext, addToQueue, currentTrack } = usePlayer();
+  const { likedSongs, removeFromLiked } = useLibrary();
+  const { addToQueue, currentTrack } = usePlayer();
+  const { playTrackFromPlaylist, playPlaylist, shufflePlayPlaylist } = usePlaylistPlayback();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSongs = likedSongs.filter(track =>
@@ -34,30 +36,21 @@ const LikedSongsPage = () => {
   );
 
   const playTrack = useCallback((track: Track, index?: number) => {
-    addToRecentlyPlayed(track);
-    
-    // Si se proporciona un índice, reproducir desde el contexto de la lista filtrada
-    if (typeof index === 'number') {
-      playFromContext(track, filteredSongs, index);
-    } else {
-      // Reproducción individual (sin contexto)
-      playerPlayTrack(track);
-    }
-  }, [addToRecentlyPlayed, playerPlayTrack, playFromContext, filteredSongs]);
+    // Usar el nuevo hook de reproducción de playlists
+    playTrackFromPlaylist(track, index, filteredSongs);
+  }, [playTrackFromPlaylist, filteredSongs]);
 
   const playAllSongs = () => {
     if (filteredSongs.length > 0) {
-      // Reproducir la primera canción con contexto completo
-      playTrack(filteredSongs[0], 0);
+      // Reproducir toda la lista desde el inicio
+      playPlaylist(filteredSongs, 0);
     }
   };
 
   const shufflePlayAll = () => {
     if (filteredSongs.length > 0) {
-      // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para mezcla de canciones
-      const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
-      // Reproducir desde la lista mezclada
-      playFromContext(shuffled[0], shuffled, 0);
+      // Reproducir la lista mezclada
+      shufflePlayPlaylist(filteredSongs);
     }
   };
 

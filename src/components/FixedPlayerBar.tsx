@@ -97,19 +97,25 @@ export default function FixedPlayerBar({
       setCurrentTime(0);
       setDuration(0);
       
-      // Cargar inmediatamente sin delay artificial
-      audioRef.current.load();
+      // Establecer isReady antes de cargar para que el src se configure correctamente
       setIsReady(true);
       
-        const attemptAutoplay = async () => {
-          try {
-          await audioRef.current?.play();
-          } catch (error) {
-          console.log('Autoplay prevented:', error);
+      // Cargar el audio después de que isReady esté establecido
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load();
+          
+          const attemptAutoplay = async () => {
+            try {
+              await audioRef.current?.play();
+            } catch (error) {
+              console.log('Autoplay prevented:', error);
+            }
+          };
+          
+          attemptAutoplay();
         }
-      };
-      
-      attemptAutoplay();
+      }, 100);
     }
   }, [currentTrack]);
 
@@ -349,7 +355,9 @@ export default function FixedPlayerBar({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={handlePlay}
             onPause={handlePause}
-            onError={(e) => console.error('Audio error:', e)}
+            onError={(e) => {
+              console.error('Audio error:', e);
+            }}
             style={{ display: 'none' }}
             preload="auto"
           />

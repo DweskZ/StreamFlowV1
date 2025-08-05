@@ -72,6 +72,16 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
   }, [currentIndex, isRepeatMode, isShuffleMode, currentTrack, autoPlayEnabled, user?.id]);
 
   const playTrack = useCallback((track: Track) => {
+    // Verificar que el track tenga la información de audio necesaria
+    if (!track.audio || track.audio.trim() === '') {
+      toast({ 
+        title: 'Error de reproducción', 
+        description: 'No se puede reproducir esta canción. Falta información de audio.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const playlistTrack: PlaylistTrack = { ...track, addedAt: new Date() };
     const existingIndex = queue.findIndex(t => t.id === track.id);
     if (existingIndex === -1) {
@@ -96,16 +106,42 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Nueva función para reproducir desde un contexto específico (playlist, favoritos, etc.)
   const playFromContext = useCallback((track: Track, contextTracks: Track[], startIndex: number) => {
+    // Verificar que el track tenga la información de audio necesaria
+    if (!track.audio || track.audio.trim() === '') {
+      toast({ 
+        title: 'Error de reproducción', 
+        description: 'No se puede reproducir esta canción. Falta información de audio.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Filtrar tracks que no tengan audio válido
+    const validTracks = contextTracks.filter(t => t.audio && t.audio.trim() !== '');
+    
+    if (validTracks.length === 0) {
+      toast({ 
+        title: 'Error de reproducción', 
+        description: 'No hay canciones reproducibles en esta lista.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     // Convertir todas las canciones del contexto a PlaylistTrack
-    const playlistTracks: PlaylistTrack[] = contextTracks.map(t => ({ ...t, addedAt: new Date() }));
+    const playlistTracks: PlaylistTrack[] = validTracks.map(t => ({ ...t, addedAt: new Date() }));
     
     // Reemplazar toda la cola con las canciones del contexto
     setQueue(playlistTracks);
     
+    // Encontrar el índice correcto en la lista filtrada
+    const validTrackIndex = validTracks.findIndex(t => t.id === track.id);
+    const actualStartIndex = validTrackIndex !== -1 ? validTrackIndex : 0;
+    
     // Establecer la canción actual y su índice
-    const currentPlaylistTrack = playlistTracks[startIndex];
+    const currentPlaylistTrack = playlistTracks[actualStartIndex];
     setCurrentTrack(currentPlaylistTrack);
-    setCurrentIndex(startIndex);
+    setCurrentIndex(actualStartIndex);
     
     // Notify library context about track play
     if (onTrackPlay) {
@@ -114,7 +150,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     
     toast({ 
       title: 'Reproduciendo desde contexto', 
-      description: `${track.name} - ${track.artist_name} (${startIndex + 1}/${contextTracks.length})` 
+      description: `${track.name} - ${track.artist_name} (${actualStartIndex + 1}/${validTracks.length})` 
     });
   }, [onTrackPlay, toast]);
 

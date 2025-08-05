@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { usePlaylistPlayback } from '@/hooks/usePlaylistPlayback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,8 +39,9 @@ import { cn } from '@/lib/utils';
 const PlaylistPage = () => {
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
-  const { playlists, deletePlaylist, updatePlaylist, removeTrackFromPlaylist, addToRecentlyPlayed } = useLibrary();
-  const { playTrack: playerPlayTrack, playFromContext, addToQueue, currentTrack } = usePlayer();
+  const { playlists, deletePlaylist, updatePlaylist, removeTrackFromPlaylist } = useLibrary();
+  const { addToQueue, currentTrack } = usePlayer();
+  const { playTrackFromPlaylist, playPlaylist, shufflePlayPlaylist } = usePlaylistPlayback();
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -55,16 +57,9 @@ const PlaylistPage = () => {
   ) || [];
 
   const playTrack = useCallback((track: Track, index?: number) => {
-    addToRecentlyPlayed(track);
-    
-    // Si se proporciona un índice, reproducir desde el contexto de la playlist
-    if (typeof index === 'number') {
-      playFromContext(track, filteredTracks, index);
-    } else {
-      // Reproducción individual (sin contexto)
-      playerPlayTrack(track);
-    }
-  }, [addToRecentlyPlayed, playerPlayTrack, playFromContext, filteredTracks]);
+    // Usar el nuevo hook de reproducción de playlists
+    playTrackFromPlaylist(track, index, filteredTracks);
+  }, [playTrackFromPlaylist, filteredTracks]);
 
   if (!playlist) {
     return (
@@ -94,17 +89,15 @@ const PlaylistPage = () => {
 
   const playAllSongs = () => {
     if (filteredTracks.length > 0) {
-      // Reproducir la primera canción con contexto completo
-      playTrack(filteredTracks[0], 0);
+      // Reproducir toda la playlist desde el inicio
+      playPlaylist(filteredTracks, 0);
     }
   };
 
   const shufflePlayAll = () => {
     if (filteredTracks.length > 0) {
-      // sonar:disable-next-line:typescript:S2245 -- Uso no crítico para mezcla de canciones
-      const shuffled = [...filteredTracks].sort(() => Math.random() - 0.5);
-      // Reproducir desde la lista mezclada
-      playFromContext(shuffled[0], shuffled, 0);
+      // Reproducir la playlist mezclada
+      shufflePlayPlaylist(filteredTracks);
     }
   };
 

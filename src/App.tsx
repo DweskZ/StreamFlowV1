@@ -19,6 +19,7 @@ import RecommendationsPage from './pages/RecommendationsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import { SubscriptionTest } from './components/subscription/SubscriptionTest';
+import TestPage from './pages/TestPage';
 import MainLayout from './components/MainLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
@@ -69,6 +70,7 @@ const App = () => (
                     <Route path="/app/pricing" element={<PricingPage />} />
                     <Route path="/app/payment-success" element={<PaymentSuccess />} />
                     <Route path="/app/test-subscription" element={<SubscriptionTest />} />
+                    <Route path="/app/test-playlists" element={<TestPage />} />
                     <Route path="/profile" element={<Profile />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
