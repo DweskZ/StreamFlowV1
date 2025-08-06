@@ -12,18 +12,18 @@ Deno.serve(async (req) => {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
 
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
     console.log('Test Stripe function called');
-    
-    if (req.method === 'OPTIONS') {
-      return new Response('ok', { headers: corsHeaders })
-    }
 
-    console.log('Checking Stripe API key...');
-    
-    // Solo verificar que Stripe funciona - listar productos
-    const products = await stripe.products.list({ limit: 1 })
-    console.log('Stripe products:', products.data.length);
+    // Verificar que Stripe esté configurado
+    if (!Deno.env.get('STRIPE_SECRET_KEY')) {
+      throw new Error('STRIPE_SECRET_KEY not configured');
+    }
 
     // Verificar que el price ID existe
     const priceId = 'price_1RrR7YQnqQD67bKrYv3Yh5Qm'
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     const price = await stripe.prices.retrieve(priceId)
     console.log('Price found:', price.id, price.unit_amount);
 
-    // Ahora crear la sesión de checkout
+    // Crear la sesión de checkout
     console.log('Creating checkout session...');
     const session = await stripe.checkout.sessions.create({
       customer_email: 'test@example.com',
@@ -43,18 +43,21 @@ Deno.serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: 'http://localhost:8080/profile?success=true',
-      cancel_url: 'http://localhost:8080/pricing?canceled=true',
+      success_url: `${req.headers.get('origin') || 'http://localhost:3000'}/profile?success=true`,
+      cancel_url: `${req.headers.get('origin') || 'http://localhost:3000'}/pricing?canceled=true`,
     })
 
     console.log('Checkout session created:', session.id);
 
+    const response = {
+      success: true,
+      url: session.url,
+      session_id: session.id,
+      message: 'Test function working correctly'
+    };
+
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        url: session.url,
-        session_id: session.id
-      }),
+      JSON.stringify(response),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -62,12 +65,17 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Stripe error:', error);
+    console.error('Test Stripe function error:', error);
+    
+    const errorResponse = {
+      success: false,
+      error: 'Test function failed',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    };
+
     return new Response(
-      JSON.stringify({ 
-        error: 'Stripe error',
-        details: error.message 
-      }),
+      JSON.stringify(errorResponse),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

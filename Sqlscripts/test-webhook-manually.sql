@@ -56,3 +56,45 @@ SELECT
 FROM payment_history 
 WHERE user_id = 'e9e38985-3479-4b6c-9d24-013e6f0e9f5b'
 ORDER BY created_at DESC; 
+
+-- Script para probar la tabla webhook_logs manualmente
+-- Ejecutar para verificar que la tabla funciona
+
+-- 1. Insertar un log de prueba
+INSERT INTO webhook_logs (
+  event_type,
+  stripe_event_type,
+  stripe_event_id,
+  status,
+  message,
+  created_at
+) VALUES (
+  'manual_test',
+  'test.event',
+  'evt_test123',
+  'info',
+  'Test log inserted manually',
+  NOW()
+);
+
+-- 2. Verificar que se insertó correctamente
+SELECT 
+  id,
+  event_type,
+  stripe_event_type,
+  stripe_event_id,
+  status,
+  message,
+  created_at
+FROM webhook_logs
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- 3. Verificar si hay algún evento en Stripe que no se esté procesando
+-- (Esto nos ayudará a entender si el problema está en Stripe o en nuestro webhook)
+SELECT 
+  COUNT(*) as total_logs,
+  COUNT(CASE WHEN status = 'error' THEN 1 END) as error_logs,
+  COUNT(CASE WHEN status = 'success' THEN 1 END) as success_logs,
+  COUNT(CASE WHEN status = 'info' THEN 1 END) as info_logs
+FROM webhook_logs; 

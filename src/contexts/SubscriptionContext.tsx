@@ -37,7 +37,9 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
 
       const plans: SubscriptionPlan[] = data.map(plan => ({
         ...plan,
-        features: Array.isArray(plan.features) ? plan.features : []
+        name: plan.name as 'free' | 'premium_monthly' | 'premium_annual',
+        interval_type: plan.interval_type as 'month' | 'year' | 'one_time',
+        features: Array.isArray(plan.features) ? plan.features.map(f => String(f)) : []
       }));
 
       setAvailablePlans(plans);
@@ -49,49 +51,139 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
 
   // Cargar suscripción del usuario
   const loadUserSubscription = useCallback(async () => {
+    console.log('🔄 loadUserSubscription iniciado para usuario:', user?.email);
+    console.log('📊 availablePlans length:', availablePlans.length);
+    
     if (!user) {
-      // Usuario no autenticado = plan gratuito
-      const freePlan = availablePlans.find(p => p.name === 'free');
-      setCurrentPlan(freePlan || null);
+      console.log('❌ No hay usuario, estableciendo valores por defecto');
+      setCurrentPlan(null);
       setUserSubscription(null);
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log('🔄 Estableciendo loading = true');
       setIsLoading(true);
       
-      const { data, error } = await supabase
+      // Comentado temporalmente para evitar errores de CORS
+      // Procesar pagos pendientes automáticamente
+      // try {
+      //   const { data: pendingData, error: pendingError } = await supabase.functions.invoke('process-pending-payments');
+      //   if (pendingData?.processed_count > 0) {
+      //     console.log('✅ Pagos pendientes procesados:', pendingData.processed_count);
+      //   }
+      // } catch (pendingError) {
+      //   console.log('⚠️ No se pudieron procesar pagos pendientes:', pendingError);
+      // }
+      
+      console.log('🔄 Consultando user_subscriptions...');
+      // Consulta simple sin join
+      const { data: subscription, error: subError } = await supabase
         .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plan:subscription_plans(*)
-        `)
+        .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      console.log('📊 Resultado de user_subscriptions:', subscription);
+      console.log('❌ Error de user_subscriptions:', subError);
+
+      if (subError) {
+        throw subError;
       }
 
-      if (data && data.subscription_plan) {
-        const subscription: UserSubscription = {
-          ...data,
-          plan: {
-            ...data.subscription_plan,
-            features: Array.isArray(data.subscription_plan.features) 
-              ? data.subscription_plan.features 
-              : []
-          }
-        };
-        
-        setUserSubscription(subscription);
-        setCurrentPlan(subscription.plan);
+      if (subscription) {
+        // Obtener el plan por separado
+        const { data: plan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('id', subscription.subscription_plan_id)
+          .maybeSingle();
+
+        if (planError) {
+          throw planError;
+        }
+
+        if (plan) {
+          const subscriptionData: UserSubscription = {
+            ...subscription,
+            status: subscription.status as 'active' | 'canceled' | 'past_due' | 'trial' | 'incomplete',
+            plan: {
+              ...plan,
+              name: plan.name as 'free' | 'premium_monthly' | 'premium_annual',
+              interval_type: plan.interval_type as 'month' | 'year' | 'one_time',
+              features: Array.isArray(plan.features) 
+                ? plan.features.map(f => String(f))
+                : []
+            }
+          };
+          
+          setUserSubscription(subscriptionData);
+          setCurrentPlan(subscriptionData.plan);
+        } else {
+          // Plan no encontrado
+          const freePlan = availablePlans.find(p => p.name === 'free');
+          setCurrentPlan(freePlan || null);
+          setUserSubscription(null);
+        }
       } else {
-        // Usuario sin suscripción = plan gratuito
+        // Usuario sin suscripción - crear suscripción gratuita automáticamente
+        console.log('📝 Usuario sin suscripción, creando suscripción gratuita...');
+        
         const freePlan = availablePlans.find(p => p.name === 'free');
-        setCurrentPlan(freePlan || null);
-        setUserSubscription(null);
+        if (freePlan) {
+          try {
+            // Crear suscripción gratuita con fechas de período
+            const now = new Date();
+            const endDate = new Date(now);
+            endDate.setDate(endDate.getDate() + 30); // 30 días para plan gratuito
+            
+            const { data: newSubscription, error: createError } = await supabase
+              .from('user_subscriptions')
+              .insert({
+                user_id: user.id,
+                subscription_plan_id: freePlan.id,
+                status: 'active',
+                created_at: now.toISOString(),
+                updated_at: now.toISOString(),
+                current_period_start: now.toISOString(),
+                current_period_end: endDate.toISOString()
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              console.error('❌ Error creando suscripción gratuita:', createError);
+              throw createError;
+            }
+
+            console.log('✅ Suscripción gratuita creada:', newSubscription);
+            
+            const subscriptionData: UserSubscription = {
+              ...newSubscription,
+              status: 'active',
+              plan: {
+                ...freePlan,
+                name: freePlan.name as 'free' | 'premium_monthly' | 'premium_annual',
+                interval_type: freePlan.interval_type as 'month' | 'year' | 'one_time',
+                features: Array.isArray(freePlan.features) 
+                  ? freePlan.features.map(f => String(f))
+                  : []
+              }
+            };
+            
+            setUserSubscription(subscriptionData);
+            setCurrentPlan(freePlan);
+          } catch (createErr) {
+            console.error('❌ Error creando suscripción gratuita:', createErr);
+            // Fallback al plan gratuito sin suscripción en BD
+            setCurrentPlan(freePlan);
+            setUserSubscription(null);
+          }
+        } else {
+          setCurrentPlan(null);
+          setUserSubscription(null);
+        }
       }
     } catch (err) {
       console.error('Error loading user subscription:', err);
@@ -102,6 +194,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       setCurrentPlan(freePlan || null);
       setUserSubscription(null);
     } finally {
+      console.log('🔄 Estableciendo loading = false');
       setIsLoading(false);
     }
   }, [user, availablePlans]);
@@ -236,19 +329,31 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     }
 
     try {
+      // Buscar el plan para obtener el stripe_price_id
+      const plan = availablePlans.find(p => p.id === planId);
+      if (!plan || !plan.stripe_price_id) {
+        toast({
+          title: 'Error',
+          description: 'Plan no disponible para actualización.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
-          planId,
-          successUrl: `${window.location.origin}/app/payment-success?success=true`,
-          cancelUrl: `${window.location.origin}/app/pricing?canceled=true`,
+          priceId: plan.stripe_price_id,
+          userId: user.id,
+          successUrl: `${window.location.origin}/profile?success=true`,
+          cancelUrl: `${window.location.origin}/pricing?canceled=true`,
         },
       });
 
       if (error) throw error;
 
-      // Redirect to Stripe Checkout
+      // Abrir Stripe checkout en nueva ventana
       if (data.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank', 'noopener,noreferrer');
       }
     } catch (err) {
       console.error('Error creating checkout session:', err);
@@ -258,7 +363,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
         variant: 'destructive',
       });
     }
-  }, [user, toast]);
+  }, [user, toast, availablePlans]);
 
   const cancelSubscription = useCallback(async (): Promise<void> => {
     if (!user) {
@@ -328,6 +433,14 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     }
   }, [user, toast, loadUserSubscription]);
 
+  const refreshSubscription = useCallback(async (): Promise<void> => {
+    try {
+      await loadUserSubscription();
+    } catch (err) {
+      console.error('Error refreshing subscription:', err);
+    }
+  }, [loadUserSubscription]);
+
   const value: SubscriptionContextValue = useMemo(() => ({
     // Estado
     currentPlan,
@@ -349,6 +462,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     upgradeToPlan,
     cancelSubscription,
     resumeSubscription,
+    refreshSubscription,
     
     // Estado premium
     isPremium,
@@ -369,6 +483,7 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     upgradeToPlan,
     cancelSubscription,
     resumeSubscription,
+    refreshSubscription,
     isPremium,
     isFreePlan,
     isTrialActive,

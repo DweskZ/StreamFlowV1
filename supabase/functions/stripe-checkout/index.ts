@@ -1,10 +1,14 @@
 import "https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from "https://esm.sh/stripe@14.21.0"
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   apiVersion: '2023-10-16',
 })
 
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
 Deno.serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -34,105 +38,46 @@ Deno.serve(async (req) => {
 
     console.log('Processing POST request...');
 
-    const bodyText = await req.text();
-    console.log('Raw request body:', bodyText);
-    
-    let requestData;
-    try {
-      requestData = JSON.parse(bodyText);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
+    // Obtener el token de autorización
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('No authorization header found');
       return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        JSON.stringify({ error: 'No authorization header' }),
         { 
-          status: 400, 
+          status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    const { priceId, userId, successUrl, cancelUrl } = requestData;
-    console.log('Received request:', { priceId, userId, successUrl, cancelUrl });
+    const token = authHeader.replace('Bearer ', '');
+    console.log('Token extracted from header');
 
-    if (!priceId || !userId) {
-      console.log('Missing required fields');
+    // Crear cliente de Supabase con el token
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+
+    // Obtener el usuario autenticado
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Error getting user:', userError);
       return new Response(
-        JSON.stringify({ error: 'Missing priceId or userId' }),
+        JSON.stringify({ error: 'User not authenticated' }),
         { 
-          status: 400, 
+          status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
-      )
+      );
     }
 
-    console.log('Creating checkout session...');
-    const session = await stripe.checkout.sessions.create({
-      customer_email: 'test@example.com',
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
-      success_url: successUrl || 'http://localhost:8080/profile?success=true',
-      cancel_url: cancelUrl || 'http://localhost:8080/pricing?canceled=true',
-    })
-
-    console.log('Checkout session created:', session.id);
-
-    return new Response(
-      JSON.stringify({ url: session.url }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
-
-  } catch (error) {
-    console.error('Error creating checkout session:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
-  }
-})
-
-Deno.serve(async (req) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  }
-
-  try {
-    console.log('Function called with method:', req.method);
-    console.log('Function called with URL:', req.url);
-
-    // Handle CORS
-    if (req.method === 'OPTIONS') {
-      console.log('Handling OPTIONS request');
-      return new Response('ok', { headers: corsHeaders })
-    }
-
-    if (req.method !== 'POST') {
-      console.log('Method not allowed:', req.method);
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }), 
-        { 
-          status: 405,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    console.log('Processing POST request...');
+    console.log('User authenticated:', user.email);
 
     const bodyText = await req.text();
     console.log('Raw request body:', bodyText);
@@ -151,13 +96,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { priceId, userId, successUrl, cancelUrl } = requestData;
-    console.log('Received request:', { priceId, userId, successUrl, cancelUrl });
+    const { priceId, successUrl, cancelUrl } = requestData;
+    console.log('Received request:', { priceId, successUrl, cancelUrl });
 
-    if (!priceId || !userId) {
-      console.log('Missing required fields');
+    if (!priceId) {
+      console.log('Missing priceId');
       return new Response(
-        JSON.stringify({ error: 'Missing priceId or userId' }),
+        JSON.stringify({ error: 'Missing priceId' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -165,18 +110,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Usar service role key para consultas de base de datos
-    // const supabase = createClient(supabaseUrl, supabaseServiceKey)
-    
-    console.log('Skipping user lookup for debugging...');
-    // Simular un usuario válido para debugging
-    const user = {
-      id: userId,
-      email: 'test@example.com' // Email por defecto para testing
-    };
-
-    console.log('Creating Stripe checkout session...');
-    
     // Verificar que Stripe esté configurado
     if (!Deno.env.get('STRIPE_SECRET_KEY')) {
       console.error('STRIPE_SECRET_KEY not found');
@@ -189,11 +122,11 @@ Deno.serve(async (req) => {
       )
     }
     
-    console.log('Stripe key exists, creating session...');
+    console.log('Creating Stripe checkout session...');
     
-    // Simplificar la sesión de Stripe al mínimo
+    // Crear la sesión de Stripe con el email real del usuario
     const session = await stripe.checkout.sessions.create({
-      customer_email: user.email,
+      customer_email: user.email, // Usar el email real del usuario
       line_items: [
         {
           price: priceId,
@@ -201,8 +134,11 @@ Deno.serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: successUrl || 'http://localhost:8080/profile?success=true',
-      cancel_url: cancelUrl || 'http://localhost:8080/pricing?canceled=true',
+      success_url: successUrl || `${req.headers.get('origin')}/profile?success=true`,
+      cancel_url: cancelUrl || `${req.headers.get('origin')}/pricing?canceled=true`,
+      metadata: {
+        userId: user.id // Usar el ID real del usuario
+      }
     })
 
     console.log('Checkout session created:', session.id);

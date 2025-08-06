@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
 
     if (!signature) {
+      console.error('No stripe signature found')
       return new Response('No signature', { status: 400 })
     }
 
@@ -27,6 +28,7 @@ Deno.serve(async (req) => {
 
     try {
       event = stripe.webhooks.constructEvent(body, signature, endpointSecret)
+      console.log('Webhook event received:', event.type)
     } catch (err) {
       console.error('Webhook signature verification failed:', err)
       return new Response('Invalid signature', { status: 400 })
@@ -36,41 +38,63 @@ Deno.serve(async (req) => {
 
     switch (event.type) {
       case 'checkout.session.completed': {
+        console.log('Processing checkout.session.completed')
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.userId
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
+
+        console.log('Session data:', {
+          userId,
+          customerId,
+          subscriptionId,
+          paymentIntent: session.payment_intent
+        })
 
         if (!userId) {
           console.error('No userId in session metadata')
           break
         }
 
-        // Obtener detalles de la suscripción
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-        const planId = subscription.items.data[0].price.id
-
-        // Buscar el plan en nuestra base de datos
-        const { data: plan } = await supabase
-          .from('subscription_plans')
-          .select('*')
-          .eq('stripe_price_id', planId)
-          .single()
-
-        if (!plan) {
-          console.error('Plan not found in database:', planId)
+        if (!subscriptionId) {
+          console.error('No subscription ID in session')
           break
         }
+
+        // Obtener detalles de la suscripción
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+        const priceId = subscription.items.data[0].price.id
+
+        console.log('Subscription details:', {
+          priceId,
+          status: subscription.status,
+          currentPeriodStart: subscription.current_period_start,
+          currentPeriodEnd: subscription.current_period_end
+        })
+
+        // Buscar el plan en nuestra base de datos
+        const { data: plan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('stripe_price_id', priceId)
+          .single()
+
+        if (planError || !plan) {
+          console.error('Plan not found in database:', priceId, planError)
+          break
+        }
+
+        console.log('Found plan:', plan.name)
 
         // Crear o actualizar la suscripción del usuario
         const { error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .upsert({
             user_id: userId,
-            plan_id: plan.id,
+            subscription_plan_id: plan.id, // Corregido: usar subscription_plan_id
             stripe_subscription_id: subscriptionId,
             stripe_customer_id: customerId,
-            status: 'active',
+            status: subscription.status, // Usar el status real de Stripe
             current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             updated_at: new Date().toISOString()
@@ -78,29 +102,54 @@ Deno.serve(async (req) => {
 
         if (subscriptionError) {
           console.error('Error updating subscription:', subscriptionError)
+        } else {
+          console.log('Subscription updated successfully')
         }
 
-        // Registrar el pago
-        const { error: paymentError } = await supabase
-          .from('payment_history')
-          .insert({
-            user_id: userId,
-            plan_id: plan.id,
-            stripe_payment_intent_id: session.payment_intent as string,
-            amount: session.amount_total,
-            currency: session.currency,
-            status: 'completed',
-            created_at: new Date().toISOString()
-          })
+        // Registrar el pago con subscription_id
+        const paymentData: any = {
+          user_id: userId,
+          subscription_id: subscriptionId, // Agregar el subscription_id
+          stripe_payment_intent_id: session.payment_intent as string,
+          stripe_invoice_id: session.invoice as string,
+          amount: session.amount_total ? session.amount_total / 100 : 0, // Convertir de centavos
+          currency: session.currency,
+          status: 'succeeded',
+          created_at: new Date().toISOString()
+        }
 
-        if (paymentError) {
-          console.error('Error recording payment:', paymentError)
+        // Solo agregar subscription_plan_id si la columna existe
+        // (esto se manejará automáticamente por Supabase)
+        try {
+          const { error: paymentError } = await supabase
+            .from('payment_history')
+            .insert(paymentData)
+
+          if (paymentError) {
+            console.error('Error recording payment:', paymentError)
+            // Intentar sin subscription_plan_id si falla
+            delete paymentData.subscription_plan_id
+            const { error: retryError } = await supabase
+              .from('payment_history')
+              .insert(paymentData)
+            
+            if (retryError) {
+              console.error('Error recording payment (retry):', retryError)
+            } else {
+              console.log('Payment recorded successfully (without plan_id)')
+            }
+          } else {
+            console.log('Payment recorded successfully')
+          }
+        } catch (error) {
+          console.error('Error in payment recording:', error)
         }
 
         break
       }
 
       case 'customer.subscription.updated': {
+        console.log('Processing customer.subscription.updated')
         const subscription = event.data.object as Stripe.Subscription
         
         // Buscar la suscripción en nuestra base de datos
@@ -128,12 +177,15 @@ Deno.serve(async (req) => {
 
         if (updateError) {
           console.error('Error updating subscription status:', updateError)
+        } else {
+          console.log('Subscription status updated to:', subscription.status)
         }
 
         break
       }
 
       case 'customer.subscription.deleted': {
+        console.log('Processing customer.subscription.deleted')
         const subscription = event.data.object as Stripe.Subscription
         
         // Marcar la suscripción como cancelada
@@ -147,38 +199,49 @@ Deno.serve(async (req) => {
 
         if (error) {
           console.error('Error cancelling subscription:', error)
+        } else {
+          console.log('Subscription cancelled successfully')
         }
 
         break
       }
 
       case 'invoice.payment_succeeded': {
+        console.log('Processing invoice.payment_succeeded')
         const invoice = event.data.object as Stripe.Invoice
         const subscriptionId = invoice.subscription as string
         
         // Buscar la suscripción en nuestra base de datos
         const { data: userSub } = await supabase
           .from('user_subscriptions')
-          .select('user_id, plan_id')
+          .select('user_id, subscription_plan_id') // Corregido: usar subscription_plan_id
           .eq('stripe_subscription_id', subscriptionId)
           .single()
 
         if (userSub) {
-          // Registrar el pago exitoso
-          const { error } = await supabase
-            .from('payment_history')
-            .insert({
-              user_id: userSub.user_id,
-              plan_id: userSub.plan_id,
-              stripe_payment_intent_id: invoice.payment_intent as string,
-              amount: invoice.amount_paid,
-              currency: invoice.currency,
-              status: 'completed',
-              created_at: new Date().toISOString()
-            })
+          // Registrar el pago exitoso (sin subscription_plan_id si no existe)
+          const paymentData: any = {
+            user_id: userSub.user_id,
+            stripe_payment_intent_id: invoice.payment_intent as string,
+            stripe_invoice_id: invoice.id,
+            amount: invoice.amount_paid ? invoice.amount_paid / 100 : 0, // Convertir de centavos
+            currency: invoice.currency,
+            status: 'succeeded',
+            created_at: new Date().toISOString()
+          }
 
-          if (error) {
-            console.error('Error recording payment:', error)
+          try {
+            const { error } = await supabase
+              .from('payment_history')
+              .insert(paymentData)
+
+            if (error) {
+              console.error('Error recording payment:', error)
+            } else {
+              console.log('Invoice payment recorded successfully')
+            }
+          } catch (error) {
+            console.error('Error in invoice payment recording:', error)
           }
         }
 
@@ -186,32 +249,41 @@ Deno.serve(async (req) => {
       }
 
       case 'invoice.payment_failed': {
+        console.log('Processing invoice.payment_failed')
         const invoice = event.data.object as Stripe.Invoice
         const subscriptionId = invoice.subscription as string
         
         // Buscar la suscripción en nuestra base de datos
         const { data: userSub } = await supabase
           .from('user_subscriptions')
-          .select('user_id, plan_id')
+          .select('user_id, subscription_plan_id') // Corregido: usar subscription_plan_id
           .eq('stripe_subscription_id', subscriptionId)
           .single()
 
         if (userSub) {
-          // Registrar el pago fallido
-          const { error } = await supabase
-            .from('payment_history')
-            .insert({
-              user_id: userSub.user_id,
-              plan_id: userSub.plan_id,
-              stripe_payment_intent_id: invoice.payment_intent as string,
-              amount: invoice.amount_due,
-              currency: invoice.currency,
-              status: 'failed',
-              created_at: new Date().toISOString()
-            })
+          // Registrar el pago fallido (sin subscription_plan_id si no existe)
+          const paymentData: any = {
+            user_id: userSub.user_id,
+            stripe_payment_intent_id: invoice.payment_intent as string,
+            stripe_invoice_id: invoice.id,
+            amount: invoice.amount_due ? invoice.amount_due / 100 : 0, // Convertir de centavos
+            currency: invoice.currency,
+            status: 'failed',
+            created_at: new Date().toISOString()
+          }
 
-          if (error) {
-            console.error('Error recording failed payment:', error)
+          try {
+            const { error } = await supabase
+              .from('payment_history')
+              .insert(paymentData)
+
+            if (error) {
+              console.error('Error recording failed payment:', error)
+            } else {
+              console.log('Failed payment recorded successfully')
+            }
+          } catch (error) {
+            console.error('Error in failed payment recording:', error)
           }
         }
 

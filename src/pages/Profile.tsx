@@ -35,11 +35,12 @@ import {
   Sun
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscriptionManagement } from '@/hooks/useStripeIntegration';
+import { useSubscriptionManagement, useStripeCheckout } from '@/hooks/useStripeIntegration';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { supabase } from '@/integrations/supabase/client';
 import { UserStats } from '@/components/UserStats';
+import { StripeTest } from '@/components/subscription/StripeTest';
 
 interface SubscriptionData {
   id: string;
@@ -53,7 +54,7 @@ interface SubscriptionData {
     description: string;
     price: number;
     currency: string;
-    interval: string;
+    interval_type: string;
     features: string[];
   };
 }
@@ -93,6 +94,7 @@ interface UserProfile {
 export default function Profile() {
   const { user, signOut } = useAuth();
   const { getSubscription, cancelSubscription, openBillingPortal, loading } = useSubscriptionManagement();
+  const { processPendingPayments, getPendingCheckoutPlan, clearPendingCheckoutPlan } = useStripeCheckout();
   const { toast } = useToast();
   const { preferences, updateTheme, updatePlaybackSettings, updateNotificationSettings, updatePrivacySettings } = useUserPreferences();
   
@@ -173,21 +175,31 @@ export default function Profile() {
   // useEffect separado para cargar suscripción
   useEffect(() => {
     const loadSubscription = async () => {
+      console.log('🔄 loadSubscription iniciado para usuario:', user?.email);
+      
       if (user) {
         setLoadingSubscription(true);
         try {
+          console.log('🔄 Llamando a getSubscription...');
           const subData = await getSubscription();
+          console.log('📊 Resultado de getSubscription:', subData);
           setSubscription(subData);
         } catch (error) {
-          console.error('Error loading subscription:', error);
+          console.error('❌ Error loading subscription:', error);
+          setSubscription(null);
         } finally {
+          console.log('🔄 Estableciendo loadingSubscription = false');
           setLoadingSubscription(false);
         }
+      } else {
+        console.log('❌ No hay usuario, estableciendo loadingSubscription = false');
+        setLoadingSubscription(false);
+        setSubscription(null);
       }
     };
 
     loadSubscription();
-  }, [user, getSubscription]);
+  }, [user]);
 
   const handleSaveProfile = async () => {
     if (!user || !profile) return;
@@ -264,26 +276,553 @@ export default function Profile() {
     }
   };
 
-  const handleCancelSubscription = async () => {
-    if (confirm('¿Estás seguro de que quieres cancelar tu suscripción?')) {
-      const success = await cancelSubscription();
-      if (success) {
+
+
+  const handleDowngradeToFree = async () => {
+    if (confirm('⚠️ ¿Estás seguro de que quieres cambiar a plan gratuito?')) {
+      try {
+        console.log('🔄 Cambiando a plan gratuito...');
+        
+        // Buscar el plan gratuito
+        const { data: freePlan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', 'free')
+          .single();
+
+        if (planError) {
+          console.error('❌ Error obteniendo plan gratuito:', planError);
+          throw planError;
+        }
+
+        // Actualizar la suscripción a plan gratuito usando UPDATE en lugar de UPSERT
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            subscription_plan_id: freePlan.id,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user?.id);
+
+        if (updateError) {
+          console.error('❌ Error actualizando suscripción:', updateError);
+          throw updateError;
+        }
+
+        console.log('✅ Cambiado a plan gratuito exitosamente');
+        
+        // Recargar datos de suscripción
         const subData = await getSubscription();
         setSubscription(subData);
+        
         toast({
-          title: 'Suscripción cancelada',
-          description: 'Tu suscripción se ha cancelado correctamente.',
+          title: 'Plan cambiado',
+          description: 'Has cambiado al plan gratuito correctamente.',
+        });
+      } catch (error) {
+        console.error('❌ Error en handleDowngradeToFree:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudo cambiar al plan gratuito.',
+          variant: 'destructive',
         });
       }
     }
   };
 
+  const handleChangeToPlan = async (planName: string) => {
+    if (confirm(`⚠️ ¿Estás seguro de que quieres cambiar a plan ${planName}? Esto es solo para testing.`)) {
+      try {
+        console.log(`🔄 Cambiando a plan ${planName}...`);
+        
+        // Buscar el plan especificado
+        const { data: plan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', planName)
+          .single();
+
+        if (planError) {
+          console.error(`❌ Error obteniendo plan ${planName}:`, planError);
+          throw planError;
+        }
+
+        // Actualizar la suscripción al plan especificado
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            subscription_plan_id: plan.id,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user?.id);
+
+        if (updateError) {
+          console.error(`❌ Error actualizando suscripción a ${planName}:`, updateError);
+          throw updateError;
+        }
+
+        console.log(`✅ Cambiado a plan ${planName} exitosamente`);
+        
+        // Recargar datos de suscripción
+        const subData = await getSubscription();
+        setSubscription(subData);
+        
+        toast({
+          title: 'Plan cambiado',
+          description: `Has cambiado al plan ${plan.display_name || plan.name}.`,
+        });
+      } catch (error) {
+        console.error(`❌ Error en handleChangeToPlan ${planName}:`, error);
+        toast({
+          title: 'Error',
+          description: `No se pudo cambiar al plan ${planName}.`,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleCreateFreeSubscription = async () => {
+    if (confirm('⚠️ ¿Estás seguro de que quieres crear una suscripción gratuita? Esto es solo para testing.')) {
+      try {
+        console.log('🔄 Creando suscripción gratuita...');
+        
+        // Buscar el plan gratuito
+        const { data: freePlan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', 'free')
+          .single();
+
+        if (planError) {
+          console.error('❌ Error obteniendo plan gratuito:', planError);
+          throw planError;
+        }
+
+        // Crear nueva suscripción gratuita con fechas de período
+        const now = new Date();
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + 30); // 30 días para plan gratuito
+        
+        const { data: newSubscription, error: createError } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user?.id,
+            subscription_plan_id: freePlan.id,
+            status: 'active',
+            created_at: now.toISOString(),
+            updated_at: now.toISOString(),
+            current_period_start: now.toISOString(),
+            current_period_end: endDate.toISOString()
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ Error creando suscripción gratuita:', createError);
+          throw createError;
+        }
+
+        console.log('✅ Suscripción gratuita creada exitosamente:', newSubscription);
+        
+        // Recargar datos de suscripción
+        const subData = await getSubscription();
+        setSubscription(subData);
+        
+        toast({
+          title: 'Suscripción creada',
+          description: 'Se creó tu suscripción gratuita correctamente.',
+        });
+      } catch (error) {
+        console.error('❌ Error en handleCreateFreeSubscription:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudo crear la suscripción gratuita.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleSimulateCheckout = async () => {
+    const planChoice = confirm(
+      '¿Qué plan quieres simular que compraste?\n\n' +
+      '• OK = Premium Mensual ($9.99/mes)\n' +
+      '• Cancelar = Premium Anual ($99.99/año)'
+    );
+    
+    const planName = planChoice ? 'premium_monthly' : 'premium_annual';
+    
+    try {
+      console.log(`🛒 Simulando checkout de ${planName}...`);
+      
+      // Buscar el plan
+      const { data: plan, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('name', planName)
+        .single();
+
+      if (planError) {
+        console.error(`❌ Error obteniendo plan ${planName}:`, planError);
+        throw planError;
+      }
+
+      // Simular un pago en payment_history
+      const { error: paymentError } = await supabase
+        .from('payment_history')
+        .insert({
+          user_id: user?.id,
+          subscription_id: subscription?.id,
+          stripe_payment_intent_id: `pi_simulated_${Date.now()}`,
+          stripe_invoice_id: `in_simulated_${Date.now()}`,
+          amount: plan.price,
+          currency: 'USD',
+          status: 'succeeded',
+          created_at: new Date().toISOString()
+        });
+
+      if (paymentError) {
+        console.error('❌ Error simulando pago:', paymentError);
+        // No lanzar error, continuar con la actualización
+      }
+
+      // Actualizar la suscripción
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update({
+          subscription_plan_id: plan.id,
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user?.id);
+
+      if (updateError) {
+        console.error(`❌ Error actualizando suscripción a ${planName}:`, updateError);
+        throw updateError;
+      }
+
+      console.log(`✅ Checkout simulado exitosamente para ${planName}`);
+      
+      // Recargar datos de suscripción
+      const subData = await getSubscription();
+      setSubscription(subData);
+      
+      toast({
+        title: 'Checkout simulado',
+        description: `Se simuló un checkout exitoso para ${plan.display_name || plan.name}.`,
+      });
+    } catch (error) {
+      console.error(`❌ Error en handleSimulateCheckout:`, error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo simular el checkout.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleForceUpdateSubscription = async () => {
+    try {
+      console.log('🔄 Actualizando estado de suscripción...');
+      
+      // PRIMERO: Verificar si hay un plan pendiente de checkout
+      const pendingPlanName = await getPendingCheckoutPlan();
+      console.log('🔍 Plan pendiente de checkout:', pendingPlanName);
+      
+      if (pendingPlanName) {
+        console.log('🎯 Usando plan pendiente:', pendingPlanName);
+        
+        // Buscar el plan en la base de datos
+        const { data: plan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', pendingPlanName)
+          .single();
+
+        if (planError) {
+          console.error('❌ Error obteniendo plan pendiente:', planError);
+          throw planError;
+        }
+
+        // Actualizar la suscripción al plan pendiente
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            subscription_plan_id: plan.id,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user?.id);
+
+        if (updateError) {
+          console.error('❌ Error actualizando suscripción:', updateError);
+          throw updateError;
+        }
+
+        console.log('✅ Suscripción actualizada al plan pendiente:', plan.name);
+        
+        // Limpiar el plan pendiente
+        await clearPendingCheckoutPlan();
+        
+        // Recargar datos de suscripción
+        const subData = await getSubscription();
+        setSubscription(subData);
+        
+        toast({
+          title: 'Suscripción actualizada',
+          description: `Se actualizó tu suscripción a ${plan.display_name || plan.name} correctamente.`,
+        });
+        
+        return; // Salir aquí, no continuar con el resto de la lógica
+      }
+      
+      // Si no hay plan pendiente, continuar con la lógica original
+      console.log('📝 No hay plan pendiente, usando lógica de pagos recientes...');
+      
+      // Verificar si hay pagos recientes
+      const { data: recentPayments, error: paymentsError } = await supabase
+        .from('payment_history')
+        .select('*')
+        .eq('user_id', user?.id)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false });
+
+      if (paymentsError) {
+        console.error('❌ Error obteniendo pagos recientes:', paymentsError);
+        throw paymentsError;
+      }
+
+      console.log('📊 Pagos recientes encontrados:', recentPayments?.length || 0);
+
+      // Listar todas las suscripciones del usuario para debugging
+      const { data: allSubscriptions, error: allSubError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user?.id);
+
+      console.log('📊 Todas las suscripciones del usuario:', allSubscriptions);
+      console.log('❌ Error obteniendo todas las suscripciones:', allSubError);
+
+      // Verificar estado actual de la suscripción
+      const { data: currentSubscription, error: subError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (subError) {
+        console.error('❌ Error obteniendo suscripción:', subError);
+        throw subError;
+      }
+
+      // Determinar qué plan usar basado en los pagos recientes
+      let targetPlan = null;
+      
+      if (recentPayments && recentPayments.length > 0) {
+        // Si hay pagos recientes, usar el plan del pago más reciente
+        const latestPayment = recentPayments[0];
+        console.log('📊 Pago más reciente:', latestPayment);
+        console.log('🔍 Detalles del pago:');
+        console.log('  - subscription_id:', latestPayment.subscription_id);
+        console.log('  - amount:', latestPayment.amount);
+        console.log('  - currency:', latestPayment.currency);
+        console.log('  - created_at:', latestPayment.created_at);
+        
+                        if (latestPayment.subscription_id) {
+                  console.log('🔍 Buscando suscripción con ID:', latestPayment.subscription_id);
+                  
+                  // Obtener la suscripción del pago más reciente
+                  const { data: subscription, error: subError } = await supabase
+                    .from('user_subscriptions')
+                    .select('subscription_plan_id')
+                    .eq('stripe_subscription_id', latestPayment.subscription_id)
+                    .single();
+                    
+                  console.log('🔍 Buscando suscripción con stripe_subscription_id:', latestPayment.subscription_id);
+                  console.log('📊 Resultado de búsqueda:', subscription);
+                  console.log('❌ Error de búsqueda:', subError);
+                    
+                  if (!subError && subscription) {
+                    // Obtener el plan de la suscripción
+                    const { data: plan, error: planError } = await supabase
+                      .from('subscription_plans')
+                      .select('*')
+                      .eq('id', subscription.subscription_plan_id)
+                      .single();
+                      
+                    if (!planError && plan) {
+                      targetPlan = plan;
+                      console.log('🎯 Plan detectado de la suscripción:', targetPlan.name);
+                    }
+                  } else {
+                    console.log('⚠️ No se encontró suscripción con stripe_subscription_id:', latestPayment.subscription_id);
+                  }
+                }
+                
+                // Si no se detectó plan por subscription_id, usar el monto como fallback
+                if (!targetPlan) {
+                  console.log('💰 Usando monto como fallback:', latestPayment.amount);
+                  
+                  // Buscar el plan basado en el monto (convertir de centavos si es necesario)
+                  let searchAmount = latestPayment.amount;
+                  
+                  // Si el monto es muy alto (probablemente en centavos), convertirlo
+                  if (searchAmount > 100) {
+                    searchAmount = searchAmount / 100;
+                    console.log('🔄 Convirtiendo monto de centavos a dólares:', searchAmount);
+                  }
+                  
+                  const { data: plans, error: plansError } = await supabase
+                    .from('subscription_plans')
+                    .select('*')
+                    .eq('price', searchAmount);
+                    
+                  if (!plansError && plans && plans.length > 0) {
+                    targetPlan = plans[0];
+                    console.log('🎯 Plan detectado por monto:', targetPlan.name, '($' + targetPlan.price + ')');
+                  } else {
+                    console.log('⚠️ No se encontró plan con precio:', searchAmount);
+                    console.log('📊 Planes disponibles:', plans);
+                  }
+                }
+      }
+      
+      // Si no se detectó plan del pago, preguntar al usuario qué plan quiere
+      if (!targetPlan) {
+        console.log('❓ No se detectó plan automáticamente');
+        
+        // Mostrar opciones al usuario
+        const planChoice = confirm(
+          'No se detectó automáticamente el plan. ¿Quieres actualizar a Premium Mensual?\n\n' +
+          '• OK = Premium Mensual ($9.99/mes)\n' +
+          '• Cancelar = Premium Anual ($99.99/año)'
+        );
+        
+        const planName = planChoice ? 'premium_monthly' : 'premium_annual';
+        
+        const { data: selectedPlan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('name', planName)
+          .single();
+
+        if (planError) {
+          console.error('❌ Error obteniendo plan:', planError);
+          throw planError;
+        }
+        targetPlan = selectedPlan;
+        console.log('🎯 Plan seleccionado por usuario:', targetPlan.name);
+      }
+
+      // Si hay pagos recientes o la suscripción actual es diferente al plan objetivo
+      if (recentPayments && recentPayments.length > 0 || 
+          (currentSubscription && currentSubscription.subscription_plan_id !== targetPlan.id)) {
+        
+        console.log('🔄 Actualizando a plan:', targetPlan.name);
+        
+        // Actualizar la suscripción al plan correcto
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            subscription_plan_id: targetPlan.id,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user?.id);
+
+        if (updateError) {
+          console.error('❌ Error actualizando suscripción:', updateError);
+          throw updateError;
+        }
+
+        console.log('✅ Suscripción actualizada a premium exitosamente');
+        
+        // Recargar datos de suscripción
+        const subData = await getSubscription();
+        setSubscription(subData);
+        
+        toast({
+          title: 'Suscripción actualizada',
+          description: `Se actualizó tu suscripción a ${targetPlan.display_name || targetPlan.name} correctamente.`,
+        });
+      } else {
+        console.log('✅ Suscripción ya está actualizada');
+        
+        // Recargar datos de suscripción
+        const subData = await getSubscription();
+        setSubscription(subData);
+        
+        toast({
+          title: 'Sin cambios',
+          description: 'Tu suscripción ya está actualizada.',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error en handleForceUpdateSubscription:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la suscripción.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    if (!dateString || dateString === 'null' || dateString === 'undefined') {
+      return 'No disponible';
+    }
+    
+    const date = new Date(dateString);
+    
+    // Verificar si la fecha es válida
+    if (isNaN(date.getTime())) {
+      return 'No disponible';
+    }
+    
+    return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  // Función para calcular el período de suscripción
+  const getSubscriptionPeriod = (subscription: any) => {
+    if (!subscription) return null;
+    
+    // Si ya tiene fechas definidas, usarlas
+    if (subscription.current_period_start && subscription.current_period_end) {
+      return {
+        start: subscription.current_period_start,
+        end: subscription.current_period_end
+      };
+    }
+    
+    // Si no tiene fechas, calcularlas basadas en la fecha de creación
+    if (subscription.created_at) {
+      const startDate = new Date(subscription.created_at);
+      let endDate = new Date(startDate);
+      
+      // Calcular fecha de fin basada en el tipo de plan
+      if (subscription.subscription_plans?.interval_type === 'month') {
+        endDate.setMonth(endDate.getMonth() + 1);
+      } else if (subscription.subscription_plans?.interval_type === 'year') {
+        endDate.setFullYear(endDate.getFullYear() + 1);
+      } else {
+        // Para planes gratuitos o de un solo pago, mostrar 30 días
+        endDate.setDate(endDate.getDate() + 30);
+      }
+      
+      return {
+        start: startDate.toISOString(),
+        end: endDate.toISOString()
+      };
+    }
+    
+    return null;
   };
 
   const getStatusBadge = (status: string) => {
@@ -476,7 +1015,13 @@ export default function Profile() {
                         <div>
                           <p className="text-sm font-medium">Periodo actual</p>
                           <p className="text-sm text-muted-foreground">
-                            {formatDate(subscription.current_period_start)} - {formatDate(subscription.current_period_end)}
+                            {(() => {
+                              const period = getSubscriptionPeriod(subscription);
+                              if (period) {
+                                return `${formatDate(period.start)} - ${formatDate(period.end)}`;
+                              }
+                              return 'Período no definido';
+                            })()}
                           </p>
                         </div>
                       </div>
@@ -486,7 +1031,7 @@ export default function Profile() {
                         <p className="text-lg font-semibold">
                           ${subscription.subscription_plans.price} {subscription.subscription_plans.currency.toUpperCase()}
                           <span className="text-sm font-normal text-muted-foreground">
-                            /{subscription.subscription_plans.interval}
+                            /{subscription.subscription_plans.interval_type === 'month' ? 'mes' : 'año'}
                           </span>
                         </p>
                       </div>
@@ -511,16 +1056,89 @@ export default function Profile() {
                         Gestionar Facturación
                       </Button>
                       
+                      <Button 
+                        onClick={handleForceUpdateSubscription}
+                        disabled={loading}
+                        variant="secondary"
+                      >
+                        {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                        Actualizar Estado
+                      </Button>
+                      
                       {subscription.status === 'active' && (
                         <Button 
-                          onClick={handleCancelSubscription}
+                          onClick={handleDowngradeToFree}
                           disabled={loading}
-                          variant="destructive"
+                          variant="outline"
+                          className="border-orange-500 text-orange-500 hover:bg-orange-50"
                         >
                           {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                          Cancelar Suscripción
+                          Cambiar a Plan Gratuito
                         </Button>
                       )}
+                          
+                                                  {/* Botones para testing manual - OCULTOS PARA MVP */}
+                        {false && (
+                          <>
+                            <Button 
+                              onClick={() => handleChangeToPlan('premium_monthly')}
+                              disabled={loading}
+                              variant="outline"
+                              className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                            >
+                              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                              📅 Cambiar a Mensual (Testing)
+                            </Button>
+                            
+                            <Button 
+                              onClick={() => handleChangeToPlan('premium_annual')}
+                              disabled={loading}
+                              variant="outline"
+                              className="border-green-500 text-green-500 hover:bg-green-50"
+                            >
+                              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                              📅 Cambiar a Anual (Testing)
+                            </Button>
+                            
+                            {/* Botón para simular checkout reciente */}
+                            <Button 
+                              onClick={handleSimulateCheckout}
+                              disabled={loading}
+                              variant="outline"
+                              className="border-purple-500 text-purple-500 hover:bg-purple-50"
+                            >
+                              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                              🛒 Simular Checkout Reciente
+                            </Button>
+                            
+                            {/* Botón para limpiar plan pendiente */}
+                            <Button 
+                              onClick={async () => {
+                                await clearPendingCheckoutPlan();
+                                toast({
+                                  title: 'Plan pendiente limpiado',
+                                  description: 'Se limpió el plan pendiente de checkout.',
+                                });
+                              }}
+                              disabled={loading}
+                              variant="outline"
+                              className="border-orange-500 text-orange-500 hover:bg-orange-50"
+                            >
+                              🧹 Limpiar Plan Pendiente
+                            </Button>
+                            
+                            {/* Botón para crear suscripción gratuita */}
+                            <Button 
+                              onClick={handleCreateFreeSubscription}
+                              disabled={loading}
+                              variant="outline"
+                              className="border-teal-500 text-teal-500 hover:bg-teal-50"
+                            >
+                              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                              🆓 Crear Suscripción Gratuita
+                            </Button>
+                          </>
+                        )}
                     </div>
                   </div>
                 ) : (
@@ -533,6 +1151,37 @@ export default function Profile() {
                 )}
               </CardContent>
             </Card>
+            
+                         {/* Componente de prueba de Stripe - OCULTO PARA MVP */}
+             {false && <StripeTest />}
+            
+            {/* Botón para actualizar estado de suscripción - OCULTO PARA MVP */}
+            {false && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Gestión de Suscripción
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Si tu suscripción no se actualiza automáticamente, usa este botón para procesar pagos pendientes.
+                    </p>
+                    <Button 
+                      onClick={handleForceUpdateSubscription}
+                      disabled={loading}
+                      variant="secondary"
+                      className="w-full sm:w-auto"
+                    >
+                      {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      Actualizar Estado de Suscripción
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Pestaña de Configuración */}

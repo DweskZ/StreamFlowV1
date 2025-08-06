@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useStripeCheckout } from '@/hooks/useStripeIntegration';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,8 @@ import { cn } from '@/lib/utils';
 
 const PricingPage = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { availablePlans, currentPlan, refreshSubscription } = useSubscription();
-  const { createCheckoutSession, processPaymentDirectly, loading: stripeLoading, error: stripeError } = useStripeCheckout();
-  const [processingPayment, setProcessingPayment] = useState(false);
+  const { availablePlans, currentPlan } = useSubscription();
+  const { createCheckoutSession, loading: stripeLoading, error: stripeError } = useStripeCheckout();
 
   // Filtrar y organizar planes
   const freePlan = availablePlans.find(p => p.name === 'free');
@@ -25,35 +23,6 @@ const PricingPage = () => {
     monthlyPlan,
     annualPlan
   ].filter(Boolean);
-
-  // Procesar pago directo si viene de Stripe con session_id (método alternativo)
-  useEffect(() => {
-    const sessionId = searchParams.get('session_id');
-    if (sessionId && !processingPayment) {
-      handleDirectPayment(sessionId);
-    }
-  }, [searchParams, processingPayment]);
-
-  const handleDirectPayment = async (sessionId: string) => {
-    setProcessingPayment(true);
-    try {
-      console.log('🔄 Procesando pago directo para sesión:', sessionId);
-      await processPaymentDirectly(sessionId);
-      console.log('✅ Pago procesado exitosamente');
-      
-      // Refrescar la suscripción del usuario
-      await refreshSubscription();
-      
-      // Redirigir al perfil con mensaje de éxito
-      navigate('/profile?success=true');
-    } catch (error) {
-      console.error('❌ Error procesando pago directo:', error);
-      // Redirigir con error
-      navigate('/pricing?error=payment_failed');
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
 
   const handleUpgrade = async (plan: any) => {
     console.log('handleUpgrade called with plan:', plan);
@@ -71,8 +40,7 @@ const PricingPage = () => {
         const result = await createCheckoutSession({
           priceId: plan.stripe_price_id,
           successUrl: `${window.location.origin}/profile?success=true`,
-          cancelUrl: `${window.location.origin}/pricing?canceled=true`,
-          planName: plan.name // Pasar el nombre del plan
+          cancelUrl: `${window.location.origin}/pricing?canceled=true`
         });
         console.log('Checkout session result:', result);
       } catch (error) {
@@ -130,14 +98,6 @@ const PricingPage = () => {
           <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto px-4">
             Desbloquea todo el potencial de StreamFlow con nuestros planes premium
           </p>
-          
-          {/* Indicador de procesamiento de pago */}
-          {processingPayment && (
-            <div className="flex items-center justify-center gap-3 text-purple-400">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Procesando pago...</span>
-            </div>
-          )}
         </div>
 
         {/* Pricing Cards */}
@@ -161,7 +121,7 @@ const PricingPage = () => {
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 sm:px-4 py-1 text-xs sm:text-sm">
+                    <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 text-xs sm:text-sm">
                       Más Popular
                     </Badge>
                   </div>
@@ -225,7 +185,7 @@ const PricingPage = () => {
                   {/* CTA Button */}
                   <Button
                     onClick={() => !isCurrent && handleUpgrade(plan)}
-                    disabled={isCurrent}
+                    disabled={isCurrent || stripeLoading}
                     variant={getButtonVariant(plan)}
                     size="lg"
                     className={cn(
@@ -233,6 +193,9 @@ const PricingPage = () => {
                       plan.name !== 'free' && !isCurrent && "neon-button hover:scale-105"
                     )}
                   >
+                    {stripeLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : null}
                     {getButtonText(plan)}
                   </Button>
                 </CardContent>
@@ -241,31 +204,25 @@ const PricingPage = () => {
           })}
         </div>
 
-        {/* Additional Info */}
-        <div className="text-center mt-8 sm:mt-12 space-y-4">
-          <p className="text-gray-400 text-sm sm:text-base">
-            ¿Tienes preguntas? <a href="#" className="text-purple-400 hover:text-purple-300">Contáctanos</a>
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
-            <span>✓ Cancela en cualquier momento</span>
-            <span>✓ Soporte 24/7</span>
-            <span>✓ Garantía de 30 días</span>
+        {/* Error Display */}
+        {stripeError && (
+          <div className="mt-8 max-w-2xl mx-auto">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              <strong>Error:</strong> {stripeError}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Back Button */}
-        <div className="text-center mt-6 sm:mt-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="text-gray-400 hover:text-white"
-          >
-            ← Volver
-          </Button>
+        {/* Footer */}
+        <div className="text-center mt-12 text-gray-400 text-sm">
+          <p>¿Tienes preguntas? Contacta con nuestro equipo de soporte</p>
+          <p className="mt-2">
+            Todos los planes incluyen acceso completo a StreamFlow
+          </p>
         </div>
       </div>
     </div>
   );
 };
 
-export default PricingPage;
+export default PricingPage; 

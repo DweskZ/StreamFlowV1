@@ -68,6 +68,7 @@ export interface SubscriptionContextValue {
   upgradeToPlan: (planId: string) => Promise<void>;
   cancelSubscription: () => Promise<void>;
   resumeSubscription: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
   
   // Estado premium
   isPremium: boolean;
