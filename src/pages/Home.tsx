@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Header from '@/components/Header';
 import SimpleTrackCard from '@/components/SimpleTrackCard';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -11,54 +11,92 @@ import { PLANS } from '@/types/subscription';
 import useTrendingSongs from '@/hooks/useTrendingSongs';
 
 const DISPLAY_COUNT = 6;
-// Artistas para fallback (orden de preferencia)
 const FALLBACK_ARTISTS = ['Bad Bunny', 'KAROL G', 'Peso Pluma', 'Taylor Swift', 'The Weeknd', 'Drake'];
+
+const norm = (s: string) =>
+  (s || '')
+    .normalize('NFD')
+    // @ts-ignore - Unicode property escapes necesitan TS/ES config
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
 
 export default function Home() {
   const { tracks, loading, error, search } = useTrendingSongs();
   const { currentTrack, playTrack } = usePlayer();
 
-  // Índice del artista de fallback en la lista
+  // Estado local para resultados de fallback (cuando trending viene vacío)
+  const [fallbackTracks, setFallbackTracks] = useState<any[]>([]);
   const fbIndexRef = useRef(0);
   const startedRef = useRef(false);
 
-  const runFallbackByIndex = useCallback((idx: number) => {
-    const artist = FALLBACK_ARTISTS[idx];
-    if (!artist) return;
-    // Forzamos búsqueda por artista exacto
-    return search(`artist:"${artist}"`);
-  }, [search]);
+  // Busca en el backend y filtra por artista exacto/normalizado
+  const fetchStrictArtist = useCallback(async (artist: string) => {
+    const q = `artist:"${artist}"`;
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=25`);
+    const data = await res.json();
+    const items: any[] = Array.isArray(data?.results) ? data.results : [];
 
-  // Al montar: empieza directamente con Bad Bunny (idx 0)
+    const target = norm(artist);
+    const strict = items.filter((t: any) => {
+      const an = norm(t?.artist_name ?? '');
+      // Si quieres ultra-estricto, cambia a: return an === target;
+      return an === target || an.includes(target);
+    });
+
+    return strict.slice(0, DISPLAY_COUNT);
+  }, []);
+
+  // Al montar: arranca la secuencia de fallback (sin mostrar error)
   useEffect(() => {
     if (!startedRef.current) {
       startedRef.current = true;
       fbIndexRef.current = 0;
-      runFallbackByIndex(fbIndexRef.current);
     }
-  }, [runFallbackByIndex]);
+  }, []);
 
-  // Si no hay resultados cuando termina de cargar, prueba el siguiente artista
+  // Orquesta: usa trending si existe; si no, prueba artistas conocidos en orden
   useEffect(() => {
-    if (!loading && tracks.length === 0) {
-      const next = fbIndexRef.current + 1;
-      if (next < FALLBACK_ARTISTS.length) {
-        fbIndexRef.current = next;
-        runFallbackByIndex(next);
-      }
-    }
-  }, [loading, tracks.length, runFallbackByIndex]);
+    const run = async () => {
+      if (loading) return;
 
-  // Búsqueda manual desde el header (mantén esto)
+      // Si trending trajo algo, úsalo y limpia fallback
+      if (tracks.length > 0) {
+        setFallbackTracks([]);
+        return;
+      }
+
+      // Si no hay trending, probar artistas en orden
+      for (let i = fbIndexRef.current; i < FALLBACK_ARTISTS.length; i++) {
+        const artist = FALLBACK_ARTISTS[i];
+        const strict = await fetchStrictArtist(artist);
+        if (strict.length > 0) {
+          fbIndexRef.current = i; // recuerda el índice que funcionó
+          setFallbackTracks(strict);
+          return;
+        }
+      }
+
+      // Si ninguno funcionó, deja vacío (UI mostrará placeholder suave)
+      setFallbackTracks([]);
+    };
+
+    run().catch(() => setFallbackTracks([]));
+  }, [loading, tracks.length, fetchStrictArtist]);
+
+  // Búsqueda manual desde el header
   const handleSearch = useCallback((query: string) => {
     if (query.trim()) search(query.trim());
   }, [search]);
 
   const getPeriodLabel = (planId: string) => (planId.includes('annual') ? '/año' : '/mes');
 
-  // Artistas derivados de la lista para el bloque "Artistas del Futuro"
+  // Lista final a renderizar (trending si hay; si no, fallback)
+  const list = (tracks.length ? tracks : fallbackTracks).slice(0, DISPLAY_COUNT);
+
+  // Artistas derivados para el bloque “Artistas del Futuro”
   const artistsMap = new Map<string, { name: string; image: string }>();
-  tracks.slice(0, DISPLAY_COUNT).forEach(t => {
+  list.forEach(t => {
     if (!artistsMap.has(t.artist_id)) {
       artistsMap.set(t.artist_id, { name: t.artist_name, image: t.album_image || t.image });
     }
@@ -121,7 +159,7 @@ export default function Home() {
         </section>
 
         <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16">
-          {/* Trending Section */}
+          {/* Trending / Fallback Section */}
           <div id="explore">
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
               <div className="w-1 h-4 sm:h-6 lg:h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
@@ -129,7 +167,6 @@ export default function Home() {
               <div className="flex-1 h-px bg-gradient-to-r from-purple-500/50 to-transparent" />
             </div>
 
-            {/* Loader */}
             {loading && (
               <div className="flex items-center justify-center py-6 sm:py-8 lg:py-12">
                 <div className="flex items-center gap-2 sm:gap-3 text-purple-400">
@@ -139,15 +176,12 @@ export default function Home() {
               </div>
             )}
 
-            {/* Silencioso: no mostramos error; el fallback automático se encarga */}
-            {!loading && tracks.length === 0 && (
-              <div className="cyber-card p-4 text-center text-gray-400">
-                Cargando selección inicial…
-              </div>
+            {!loading && list.length === 0 && (
+              <div className="cyber-card p-4 text-center text-gray-400">Cargando selección inicial…</div>
             )}
 
             <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-              {tracks.slice(0, DISPLAY_COUNT).map((track, index) => (
+              {list.map((track, index) => (
                 <div
                   key={track.id}
                   className="cyber-card p-2 sm:p-3 lg:p-4 hover-glow transition-all duration-300"
