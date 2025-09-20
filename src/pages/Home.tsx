@@ -10,36 +10,55 @@ import { Link } from 'react-router-dom';
 import { PLANS } from '@/types/subscription';
 import useTrendingSongs from '@/hooks/useTrendingSongs';
 
+const DISPLAY_COUNT = 6;
+// Artistas para fallback (orden de preferencia)
+const FALLBACK_ARTISTS = ['Bad Bunny', 'KAROL G', 'Peso Pluma', 'Taylor Swift', 'The Weeknd', 'Drake'];
+
 export default function Home() {
   const { tracks, loading, error, search } = useTrendingSongs();
   const { currentTrack, playTrack } = usePlayer();
 
-  // 🔁 Fallback cuando trending no trae datos (RapidAPI sin /chart)
-  const triedFallbackRef = useRef(false);
+  // Índice del artista de fallback en la lista
+  const fbIndexRef = useRef(0);
+  const startedRef = useRef(false);
 
-  const runFallback = useCallback(() => {
-    // Cambia la query si prefieres otra semilla
-    return search('Top 50 Global');
-    // Ejemplos alternativos:
-    // return search('genre:"pop"');
-    // return search('Top Hits');
+  const runFallbackByIndex = useCallback((idx: number) => {
+    const artist = FALLBACK_ARTISTS[idx];
+    if (!artist) return;
+    // Forzamos búsqueda por artista exacto
+    return search(`artist:"${artist}"`);
   }, [search]);
 
+  // Al montar: empieza directamente con Bad Bunny (idx 0)
   useEffect(() => {
-    if (!loading && !triedFallbackRef.current && (error || tracks.length === 0)) {
-      triedFallbackRef.current = true;
-      runFallback();
+    if (!startedRef.current) {
+      startedRef.current = true;
+      fbIndexRef.current = 0;
+      runFallbackByIndex(fbIndexRef.current);
     }
-  }, [loading, error, tracks.length, runFallback]);
+  }, [runFallbackByIndex]);
 
+  // Si no hay resultados cuando termina de cargar, prueba el siguiente artista
+  useEffect(() => {
+    if (!loading && tracks.length === 0) {
+      const next = fbIndexRef.current + 1;
+      if (next < FALLBACK_ARTISTS.length) {
+        fbIndexRef.current = next;
+        runFallbackByIndex(next);
+      }
+    }
+  }, [loading, tracks.length, runFallbackByIndex]);
+
+  // Búsqueda manual desde el header (mantén esto)
   const handleSearch = useCallback((query: string) => {
     if (query.trim()) search(query.trim());
   }, [search]);
 
   const getPeriodLabel = (planId: string) => (planId.includes('annual') ? '/año' : '/mes');
 
+  // Artistas derivados de la lista para el bloque "Artistas del Futuro"
   const artistsMap = new Map<string, { name: string; image: string }>();
-  tracks.forEach(t => {
+  tracks.slice(0, DISPLAY_COUNT).forEach(t => {
     if (!artistsMap.has(t.artist_id)) {
       artistsMap.set(t.artist_id, { name: t.artist_name, image: t.album_image || t.image });
     }
@@ -60,7 +79,7 @@ export default function Home() {
       <div className="relative z-10">
         <Header onSearch={handleSearch} />
 
-        {/* Hero Section - Mobile Optimized */}
+        {/* Hero Section */}
         <section className="relative bg-gradient-to-r from-purple-900/40 via-blue-900/40 to-cyan-900/40 text-center py-8 sm:py-12 lg:py-20 border-b border-purple-500/20 backdrop-blur-sm">
           <div className="absolute inset-0 bg-black/20" />
           <div className="relative z-10 container mx-auto px-4">
@@ -70,15 +89,12 @@ export default function Home() {
                 <div className="absolute inset-0 w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-purple-500/20 rounded-full blur-xl" />
               </div>
             </div>
-
             <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-6xl font-bold mb-3 sm:mb-4 lg:mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent animate-gradient">
               Bienvenido a StreamFlow
             </h2>
-
             <p className="text-gray-300 mb-4 sm:mb-6 lg:mb-8 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
               Sumérgete en el futuro de la música. Descubre beats cyberpunk, melodías sintéticas y ritmos que trascienden dimensiones.
             </p>
-
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
               <Button
                 asChild
@@ -105,7 +121,7 @@ export default function Home() {
         </section>
 
         <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12 space-y-8 sm:space-y-12 lg:space-y-16">
-          {/* Trending Section - Mobile Optimized */}
+          {/* Trending Section */}
           <div id="explore">
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
               <div className="w-1 h-4 sm:h-6 lg:h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
@@ -113,6 +129,7 @@ export default function Home() {
               <div className="flex-1 h-px bg-gradient-to-r from-purple-500/50 to-transparent" />
             </div>
 
+            {/* Loader */}
             {loading && (
               <div className="flex items-center justify-center py-6 sm:py-8 lg:py-12">
                 <div className="flex items-center gap-2 sm:gap-3 text-purple-400">
@@ -122,31 +139,15 @@ export default function Home() {
               </div>
             )}
 
-            {error && (
-              <div className="cyber-card border-red-500/30 p-3 sm:p-4 lg:p-6 text-center">
-                <p className="text-red-400 mb-3 sm:mb-4 text-xs sm:text-sm lg:text-base">
-                  {error} — cargando alternativa…
-                </p>
-                <Button
-                  onClick={() => {
-                    triedFallbackRef.current = true;
-                    runFallback();
-                  }}
-                  variant="outline"
-                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs sm:text-sm"
-                >
-                  Usar fallback
-                </Button>
+            {/* Silencioso: no mostramos error; el fallback automático se encarga */}
+            {!loading && tracks.length === 0 && (
+              <div className="cyber-card p-4 text-center text-gray-400">
+                Cargando selección inicial…
               </div>
             )}
 
-            {/* Estado neutro si no hay error pero aún no hay datos */}
-            {!loading && !error && tracks.length === 0 && (
-              <div className="cyber-card p-4 text-center text-gray-400">Cargando selección inicial…</div>
-            )}
-
             <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-              {tracks.slice(0, 6).map((track, index) => (
+              {tracks.slice(0, DISPLAY_COUNT).map((track, index) => (
                 <div
                   key={track.id}
                   className="cyber-card p-2 sm:p-3 lg:p-4 hover-glow transition-all duration-300"
@@ -162,7 +163,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Subscription Plans Section - Mobile Optimized */}
+          {/* Planes */}
           <div>
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
               <div className="w-1 h-4 sm:h-6 lg:h-8 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full" />
@@ -251,7 +252,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Artists Section - Mobile Optimized */}
+          {/* Artistas del Futuro */}
           {artists.length > 0 && (
             <div>
               <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6 lg:mb-8">
@@ -283,7 +284,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Features Section - Mobile Optimized */}
+          {/* Features */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-8 sm:mt-12 lg:mt-16">
             <div className="cyber-card p-3 sm:p-4 lg:p-6 text-center hover-glow">
               <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 lg:mb-4">
